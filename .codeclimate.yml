@@ -1,0 +1,26 @@
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+        python:
+          mass_threshold: 32
+  fixme:
+    enabled: true
+  pep8:
+    enabled: true
+  markdownlint:
+    enabled: true
+  govet:
+    enabled: true
+  golint:
+    enabled: true
+    config:
+      min_confidence: 0.8
+  gofmt:
+    enabled: true
+
+ratings:
+  paths:
+    - "**.go"
+    - "**.py"
