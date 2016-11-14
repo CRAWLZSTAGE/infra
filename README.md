@@ -8,10 +8,24 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/927edd47e2df4a9db9a941c40c0fc470)](https://www.codacy.com/app/jellyjellyrobot/infra?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=CRAWLZSTAGE/infra&amp;utm_campaign=Badge_Grade)
 
 
-## Staging Area
+## Was Ist Das?
 
-Reserved as staging area.
+CRAWLZ seeks to develop a database of Businesses worldwide. It allows a company to build a local cache of business contact information using only the search results from its user’s computing device.
 
-```sh
-python ./meh.py
-```
+## Architecture
+
+This project is split into 5 containers, which can be scaled to fit processing tasks as defined by the user. We intend to atomize certain functions to introduce more scalablity and functionalities into the code base. For example: 
+- Captcha circumvention using machine learning or crowdsourcing
+
+## Deployment
+
+Currently, the code is/will be (TODO) be tested on
+- a local environment with 8 cores
+- 1 * DigitalOcean instance quad core instance
+We intend to scale this up to span multiple computers in the future.
+
+## Wiki
+
+[Installation](INSTALL.md) instructions can be found here.
+
+[Testing](TESTING.md) instructions can be found here.
