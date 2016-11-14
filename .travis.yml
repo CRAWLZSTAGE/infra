@@ -1,11 +1,15 @@
 language: python
-python:
-  - "2.6"
-  - "2.7"
-  - "3.5"
-  - "3.5-dev"
-  - "3.6-dev"
-  - "nightly"
+
+matrix :
+  include:
+  - python: '2.6'
+  - python: '2.7'
+    addons:
+      srcclr: true
+  - python: '3.5'
+  - python: '3.5-dev'
+  - python: '3.6-dev'
+  - python: 'nightly'
 
 install:
   - "pip install -r requirements.txt"
@@ -13,5 +17,3 @@ install:
 script:
   - pytest .travis/tests.py
 
-addons:
-  srcclr: true
