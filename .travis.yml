@@ -12,3 +12,6 @@ install:
 
 script:
   - pytest .travis/tests.py
+
+addons:
+  srcclr: true
