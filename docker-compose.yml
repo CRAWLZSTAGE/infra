@@ -1,0 +1,40 @@
+version: "2"
+
+service:
+  db:
+    build: ./db
+    volumes:
+      - /mnt/sdc:/mnt/sdc
+  mqtt:
+    build: ./mqtt
+  fetch:
+    build: ./fetch
+    links:
+      - mqtt
+    depends_on:
+      - mqtt
+  parser:
+    build: ./parser
+    links:
+      - mqtt
+    depends_on:
+      - mqtt
+  store:
+    build: ./store
+    links:
+      - mqtt
+      - db
+    depends_on:
+      - mqtt
+      - db
+  filter:
+    build: ./filter
+    links:
+      - mqtt
+      - db
+    depends_on:
+      - mqtt
+      - db
+
+
+
