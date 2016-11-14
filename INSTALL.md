@@ -1,4 +1,4 @@
-## Installation Instructions
+# Installation Instructions
 
 Please make sure you have the prerequisite software on your KOMPUTER
 
@@ -9,7 +9,7 @@ Please make sure you have the prerequisite software on your KOMPUTER
 
 # Python python, pip
 
-brew install python 
+brew install python
 
 # Install utilities
 
