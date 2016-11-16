@@ -41,7 +41,7 @@ def linkedIn_fetch(url):
         doc = html.fromstring(formatted_response)
         datafrom_xpath = doc.xpath('//code[@id="stream-right-rail-embed-id-content"]//text()')
         if datafrom_xpath:
-            return response
+            return datafrom_xpath
     print "cant fetch page", url
     return None
 
@@ -55,9 +55,7 @@ def callback(ch, method, properties, body):
     print("Method: {}".format(method))
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
-    raw_data = json.loads(body)
-    if not raw_data.has_key("url"):
-        return
+    url = json.loads(body)
     """
     TODO
     Pick appropriate fetcher from url
@@ -73,10 +71,15 @@ def callback(ch, method, properties, body):
         routing_key='parse',
         body=json.dumps(new_body),
         properties=pika.BasicProperties(
-            delivery_mode = 2, # make message persistent
+            delivery_mode = 1
         )
     )
+    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='fetch')
 ingress_channel.start_consuming()
+
+
+
+

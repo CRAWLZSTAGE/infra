@@ -7,7 +7,7 @@ import time
 store specific dependencies
 """
 
-from storm.locals import *
+from peewee import *
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
@@ -23,46 +23,38 @@ This script uses the storm ORM module from canonical
 https://storm.canonical.com/FrontPage#Documentation
 """
 
-database = create_database("postgres://" + 
-    DB_USER + ":" + DB_PASSWORD + "@" + DB_HOST 
-    + ":5432/" + DB_NAME)
+psql_db = PostgresqlDatabase(DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
 
-class Contact:
-    __storm_table__ = "contacts"
-    __storm_primary__ = "org_name"
-    org_name = unicode()
-    org_type = unicode()
-    description = unicode()
-    address = unicode()
-    city = unicode()
-    state = unicode()
-    postal_code = Int()
-    contact_no = unicode()
-    fax_no = unicode()
-    email_address = unicode()
-    website = unicode()
-    industry = unicode()
-    follower_count = Int()
+class BaseModel(Model):
+    class Meta:
+        database = psql_db
 
-    def __init__(self, org_name=None, org_type=None, description=None, 
-        address=None, city=None, state=None, postal_code=None, 
-        contact_no=None, fax_no=None, email_address=None, 
-        website=None, industry=None, follower_count=None):
-        self.org_name = org_name
-        self.org_type = org_type
-        self.description = description
-        self.address = address
-        self.city = city
-        self.state = state
-        self.postal_code = postal_code
-        self.contact_no = contact_no
-        self.fax_no = fax_no
-        self.email_address = email_address
-        self.website = website
-        self.industry = industry
-        self.follower_count = follower_count
- 
-db = Store(database)
+class Contact(BaseModel):
+    org_name = CharField(primary_key=True)
+    org_type = CharField(null = True)
+    description = TextField(null = True)
+    address = TextField(null = True)
+    city = CharField(null = True)
+    state = CharField(null = True)
+    postal_code = IntegerField(default=0, null = True)
+    contact_no = CharField(null = True)
+    fax_no = CharField(null = True)
+    email_address = TextField(null = True)
+    website = TextField(null = True)
+    industry = CharField(null = True)
+    follower_count = IntegerField(default=0, null = True)
+
+while True:
+    try:
+        print "attemption DB connection at ", DB_HOST
+        psql_db.connect()
+        break
+    except Exception:
+        print "connection failed"
+        time.sleep(5)
+
+if not Contact.table_exists():
+    Contact.create_table()
 
 """
 MQTT tutorial from 
@@ -87,9 +79,11 @@ def callback(ch, method, properties, body):
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
     data = json.loads(body)
-    if not data.has_key("org_name") or not data.has_key("contact_no"):
+    if not data.has_key("org_name"):
         return
-    newContact = Contact(data["org_name"], data["contact_no"])
+    newContact = Contact(org_name=data["org_name"])
+    if data.has_key("contact_no"):
+        newContact.contact_no = data["contact_no"]
     if data.has_key("org_type"):
         newContact.org_type = data["org_type"]
     if data.has_key("description"):
@@ -100,7 +94,7 @@ def callback(ch, method, properties, body):
         newContact.city = data["city"]
     if data.has_key("state"):
         newContact.state = data["state"]
-    if data.has_key("postal_code"):
+    if data.has_key("postal_code") and type(data["postal_code"]) == int:
         newContact.postal_code = data["postal_code"]
     if data.has_key("fax_no"):
         newContact.fax_no = data["fax_no"]
@@ -108,15 +102,14 @@ def callback(ch, method, properties, body):
         newContact.email_address = data["email_address"]
     if data.has_key("website"):
         newContact.website = data["website"]
-    if data.has_key("follower_count"):
+    if data.has_key("follower_count") and type(data["follower_count"]) == int:
         newContact.follower_count = data["follower_count"]
     """
     TODO
     Check for collision
     """
-    db.add(newContact)
-    db.commit()
-    ch.basic_ack(delivery_tag = method.delivery_tag)
+    newContact.save(force_insert=True)
+    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='store')

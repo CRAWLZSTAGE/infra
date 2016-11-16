@@ -16,7 +16,6 @@ ENV POSTGRES_USER=NOT_THIS_USER
 ENV POSTGRES_DB=TEST_DB
 ENV PGDATA=/mnt/sda1/ext
 
-# ./schema.sql /schmea.sql
 # COPY ./schema.sql /docker-entrypoint-initdb.d/
 
 EXPOSE 5432

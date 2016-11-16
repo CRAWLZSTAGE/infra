@@ -32,7 +32,7 @@ store_egress_channel.queue_declare(queue='store', durable=True)
 filter_egress_channel = mqtt_connection.channel()
 filter_egress_channel.queue_declare(queue='filter', durable=True)
 
-def linkedIn_parse(url, html_response):
+def linkedIn_parse(url, datafrom_xpath):
     """
     TODO
     atomize this section
@@ -41,64 +41,58 @@ def linkedIn_parse(url, html_response):
     """
     remove comments
     """
-    formatted_response = html_response.content.replace('<!--', '').replace('-->', '')
-    doc = html.fromstring(formatted_response)
-    datafrom_xpath = doc.xpath('//code[@id="stream-right-rail-embed-id-content"]//text()')
-    if datafrom_xpath:
-        try:
-            json_formatted_data = json.loads(datafrom_xpath[0])
-            company_name = json_formatted_data['companyName'] if 'companyName' in json_formatted_data.keys() else None
-            size = json_formatted_data['size'] if 'size' in json_formatted_data.keys() else None
-            industry = json_formatted_data['industry'] if 'industry' in json_formatted_data.keys() else None
-            description = json_formatted_data['description'] if 'description' in json_formatted_data.keys() else None
-            follower_count = json_formatted_data['followerCount'] if 'followerCount' in json_formatted_data.keys() else None
-            year_founded = json_formatted_data['yearFounded'] if 'yearFounded' in json_formatted_data.keys() else None
-            website = json_formatted_data['website'] if 'website' in json_formatted_data.keys() else None
-            org_type = json_formatted_data['companyType'] if 'companyType' in json_formatted_data.keys() else None
-            specialities = json_formatted_data['specialties'] if 'specialties' in json_formatted_data.keys() else None
-            alsoViewed = json_formatted_data['alsoViewed'] if 'alsoViewed' in json_formatted_data.keys() else None
+    try:
+        json_formatted_data = json.loads(datafrom_xpath[0])
+        company_name = json_formatted_data['companyName'] if 'companyName' in json_formatted_data.keys() else None
+        size = json_formatted_data['size'] if 'size' in json_formatted_data.keys() else None
+        industry = json_formatted_data['industry'] if 'industry' in json_formatted_data.keys() else None
+        description = json_formatted_data['description'] if 'description' in json_formatted_data.keys() else None
+        follower_count = json_formatted_data['followerCount'] if 'followerCount' in json_formatted_data.keys() else None
+        year_founded = json_formatted_data['yearFounded'] if 'yearFounded' in json_formatted_data.keys() else None
+        website = json_formatted_data['website'] if 'website' in json_formatted_data.keys() else None
+        org_type = json_formatted_data['companyType'] if 'companyType' in json_formatted_data.keys() else None
+        specialities = json_formatted_data['specialties'] if 'specialties' in json_formatted_data.keys() else None
+        alsoViewed = json_formatted_data['alsoViewed'] if 'alsoViewed' in json_formatted_data.keys() else None
 
-            if "headquarters" in json_formatted_data.keys():
-                city = json_formatted_data["headquarters"]['city'] if 'city' in json_formatted_data["headquarters"].keys() else None
-                country = json_formatted_data["headquarters"]['country'] if 'country' in json_formatted_data['headquarters'].keys() else None
-                state = json_formatted_data["headquarters"]['state'] if 'state' in json_formatted_data['headquarters'].keys() else None
-                street1 = json_formatted_data["headquarters"]['street1'] if 'street1' in json_formatted_data['headquarters'].keys() else None
-                street2 = json_formatted_data["headquarters"]['street2'] if 'street2' in json_formatted_data['headquarters'].keys() else None
-                postal_code = json_formatted_data["headquarters"]['zip'] if 'zip' in json_formatted_data['headquarters'].keys() else None
-                street = street1 + ', ' + street2
-            else:
-                city = None
-                country = None
-                state = None
-                street1 = None
-                street2 = None
-                street = None
-                postal_code = None
+        if "headquarters" in json_formatted_data.keys():
+            city = json_formatted_data["headquarters"]['city'] if 'city' in json_formatted_data["headquarters"].keys() else None
+            country = json_formatted_data["headquarters"]['country'] if 'country' in json_formatted_data['headquarters'].keys() else None
+            state = json_formatted_data["headquarters"]['state'] if 'state' in json_formatted_data['headquarters'].keys() else None
+            street1 = json_formatted_data["headquarters"]['street1'] if 'street1' in json_formatted_data['headquarters'].keys() else None
+            street2 = json_formatted_data["headquarters"]['street2'] if 'street2' in json_formatted_data['headquarters'].keys() else None
+            postal_code = json_formatted_data["headquarters"]['zip'] if 'zip' in json_formatted_data['headquarters'].keys() else None
+            street = street1 + ', ' + street2
+        else:
+            city = None
+            country = None
+            state = None
+            street1 = None
+            street2 = None
+            street = None
+            postal_code = None
 
-            contact = {
-                'org_name': company_name,
-                'org_type': org_type,
-                'description': description,
-                'address': street,
-                'city': city,
-                'state': state,
-                'postal_code': postal_code,
-                'website': website,
-                'industry': industry,
-                'follower_count': follower_count,
-                'specialities': specialities,
-                'country': country,
-                'url': url,
-            }
+        contact = {
+            'org_name': company_name,
+            'org_type': org_type,
+            'description': description,
+            'address': street,
+            'city': city,
+            'state': state,
+            'postal_code': postal_code,
+            'website': website,
+            'industry': industry,
+            'follower_count': follower_count,
+            'specialities': specialities,
+            'country': country,
+            'url': url,
+        }
 
-            for coy in alsoViewed:
-                list_of_companies.append(coy["homeUrl"])
-            return [ contact, list_of_companies ]
-        except:
-            print "cant parse page", url
-            return None
-    print "cannot find element", url
-    return None
+        for coy in alsoViewed:
+            list_of_companies.append(coy["homeUrl"])
+        return [ contact, list_of_companies ]
+    except:
+        print "cant parse page", url
+        return [ None, None ]
 
 
 def concatenate_facebook_location(company_location_dict):
@@ -156,7 +150,10 @@ def callback(ch, method, properties, body):
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
     raw_data = json.loads(body)
+    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     if not raw_data.has_key("url") or not raw_data.has_key("html_response"):
+        return
+    if raw_data.has_key("html_response") == None:
         return
     """
     TODO
@@ -170,7 +167,7 @@ def callback(ch, method, properties, body):
         routing_key='store',
         body=json.dumps(contact),
         properties=pika.BasicProperties(
-            delivery_mode = 2, # make message persistent
+            delivery_mode = 1
         )
     )
     filter_egress_channel.basic_publish(
@@ -178,7 +175,7 @@ def callback(ch, method, properties, body):
         routing_key='filter',
         body=json.dumps(list_of_companies),
         properties=pika.BasicProperties(
-            delivery_mode = 2, # make message persistent
+            delivery_mode = 1
         )
     )
 
