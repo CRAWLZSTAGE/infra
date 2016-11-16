@@ -1,12 +1,14 @@
 version: "2"
 
-service:
+services:
   db:
     build: ./db
     volumes:
       - /mnt/sdc:/mnt/sdc
   mqtt:
     build: ./mqtt
+    ports:
+      - 15672:15672
   fetch:
     build: ./fetch
     links:
