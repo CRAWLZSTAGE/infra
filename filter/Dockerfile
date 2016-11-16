@@ -32,6 +32,11 @@ RUN until apt-get install \
 
 RUN until apt-get install \
   -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    python-dev \
+    python-pip \
+    curl \
     python; \
   do echo "retrying install"; \
   done;
@@ -41,6 +46,8 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python
 ## COMMON_INIT_END
 
 ENV MQTT_HOST=mqtt
+ENV MQTT_USER=NOT_THIS_USER
+ENV MQTT_PASSWORD=NOT_THIS_PASSWORD
 ENV DB_HOST=db
 ENV DB_PASSWORD=NOT_THIS_PASSWORD
 ENV DB_USER=NOT_THIS_USER
@@ -49,6 +56,6 @@ ENV DB_NAME=TEST_DB
 COPY requirements.txt /
 COPY filter.py /
 
-RUN pip install requirements.txt
+RUN pip install -r requirements.txt
 
 CMD ["python", "filter.py"]

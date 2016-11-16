@@ -32,6 +32,10 @@ RUN until apt-get install \
 
 RUN until apt-get install \
   -y --no-install-recommends \
+    gcc \
+    python-dev \
+    python-pip \
+    curl \
     python; \
   do echo "retrying install"; \
   done;
@@ -40,13 +44,13 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
 ## COMMON_INIT_END
 
-ENV 
-
 ENV MQTT_HOST=mqtt
+ENV MQTT_USER=NOT_THIS_USER
+ENV MQTT_PASSWORD=NOT_THIS_PASSWORD
 
 COPY requirements.txt /
 COPY fetch.py /
 
-RUN pip install requirements.txt
+RUN pip install -r requirements.txt
 
 CMD ["python", "fetch.py"]

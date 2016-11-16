@@ -1,7 +1,7 @@
 import os
 import pika
 import json
-
+import time
 """
 filter specific dependencies
 """
@@ -10,6 +10,8 @@ from storm.locals import *
 from datetime import datetime
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
+MQTT_USER = os.environ.get('MQTT_USER')
+MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 DB_HOST = os.environ.get('DB_HOST')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
@@ -30,15 +32,23 @@ class Record:
     __storm_primary__ = "url"
     url = Unicode()
     last_accessed = DateTime()
-
+    
     def __init__(self, url=None, last_accessed=None):
         self.url = url
         self.last_accessed = datetime.utcnow() if last_accessed == None else last_accessed
- 
+
 db = Store(database)
 
-mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(
-    host=MQTT_HOST))
+while True:
+    try:
+        print "attempting connection"
+        _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
+        mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
+        break
+    except Exception:
+        print "connection failed"
+        time.sleep(5)
+
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='filter', durable=True)
 egress_channel = mqtt_connection.channel()
@@ -48,7 +58,7 @@ def seen(website):
     """
     TODO: test this!
     """
-    if db.find(Record, Record.url == website).one()
+    if db.find(Record, Record.url == website).one():
         return True
     return False
 
@@ -57,7 +67,7 @@ def callback(ch, method, properties, body):
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
     raw_data = json.loads(body)
-    for website in raw_data
+    for website in raw_data:
         if not seen(website):
             egress_channel.basic_publish(
                 exchange='',

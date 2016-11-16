@@ -1,6 +1,7 @@
 import os
 import pika
 import json
+import time
 
 """
 fetch specific dependencies
@@ -12,9 +13,19 @@ from exceptions import ValueError
 from lxml import html
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
+MQTT_USER = os.environ.get('MQTT_USER')
+MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 
-mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(
-    host=MQTT_HOST))
+while True:
+    try:
+        print "attempting connection"
+        _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
+        mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
+        break
+    except Exception:
+        print "connection failed"
+        time.sleep(5)
+
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='fetch', durable=True)
 egress_channel = mqtt_connection.channel()
@@ -27,7 +38,7 @@ def linkedIn_fetch(url):
         formatted_response = response.content.replace('<!--', '').replace('-->', '')
         doc = html.fromstring(formatted_response)
         datafrom_xpath = doc.xpath('//code[@id="stream-right-rail-embed-id-content"]//text()')
-        if datafrom_xpath
+        if datafrom_xpath:
             return response
     print "cant fetch page", url
     return None

@@ -1,2 +1,3 @@
 pika>=0.10.0
 storm>=0.20
+psycopg2==2.2

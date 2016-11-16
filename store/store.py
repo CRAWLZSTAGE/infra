@@ -1,6 +1,7 @@
 import os
 import pika
 import json
+import time
 
 """
 store specific dependencies
@@ -9,6 +10,8 @@ store specific dependencies
 from storm.locals import *
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
+MQTT_USER = os.environ.get('MQTT_USER')
+MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 DB_HOST = os.environ.get('DB_HOST')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
@@ -66,8 +69,16 @@ MQTT tutorial from
 https://cuongba.com/install-rabbitmq-and-send-json-data-with-python-on-ubuntu/
 """
 
-mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(
-    host=MQTT_HOST))
+while True:
+    try:
+        print "attempting connection"
+        _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
+        mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
+        break
+    except Exception:
+        print "connection failed"
+        time.sleep(5)
+
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='store', durable=True)
 
