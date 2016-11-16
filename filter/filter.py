@@ -6,7 +6,7 @@ import time
 filter specific dependencies
 """
 
-from storm.locals import *
+from peewee import *
 from datetime import datetime
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
@@ -23,25 +23,31 @@ This script uses the storm ORM module from canonical
 https://storm.canonical.com/FrontPage#Documentation
 """
 
-database = create_database("postgres://" + 
-    DB_USER + ":" + DB_PASSWORD + "@" + DB_HOST 
-    + ":5432/" + DB_NAME)
+psql_db = PostgresqlDatabase(DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
 
-class Record:
-    __store_table__ = "records"
-    __storm_primary__ = "url"
-    url = Unicode()
-    last_accessed = DateTime()
-    
-    def __init__(self, url=None, last_accessed=None):
-        self.url = url
-        self.last_accessed = datetime.utcnow() if last_accessed == None else last_accessed
+class BaseModel(Model):
+    class Meta:
+        database = psql_db
 
-db = Store(database)
+class Record(BaseModel):
+    url = CharField(primary_key=True)
+    last_accessed = DateTimeField(default=datetime.utcnow())
 
 while True:
     try:
-        print "attempting connection"
+        print "attemption DB connection at ", DB_HOST
+        psql_db.connect()
+        break
+    except Exception:
+        print "connection failed"
+        time.sleep(5)
+
+if not Record.table_exists():
+    Record.create_table()
+
+while True:
+    try:
+        print "attempting pika connection at ", MQTT_HOST
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
@@ -58,9 +64,11 @@ def seen(website):
     """
     TODO: test this!
     """
-    if db.find(Record, Record.url == website).one():
+    try:
+        Record.select().where(Record.url == website).get()
         return True
-    return False
+    except Exception:
+        return False
 
 def callback(ch, method, properties, body):
     print("Method: {}".format(method))
@@ -74,9 +82,12 @@ def callback(ch, method, properties, body):
                 routing_key='fetch',
                 body=json.dumps(website),
                 properties=pika.BasicProperties(
-                    delivery_mode = 2, # make message persistent
+                    delivery_mode = 1
                 )
             )
+            newRecord = Record(url=website)
+            newRecord.save(force_insert=True)
+    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
 
 ingress_channel.basic_qos(prefetch_count=1)

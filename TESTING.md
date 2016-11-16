@@ -26,6 +26,7 @@ docker-machine create --driver virtualbox \
   --virtualbox-no-share \
   local-dev
 
+eval $(docker-machine env local-dev)
 docker-machine ssh local-dev sudo mkdir -p /mnt/sda1/ext
 
 ```

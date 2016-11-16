@@ -5,11 +5,31 @@ services:
     build: ./db
     volumes:
       - /mnt/sdc:/mnt/sdc
+    ports:
+      - 5432:5432
   mqtt:
     build: ./mqtt
     ports:
       - 15672:15672
   fetch:
+    build: ./fetch
+    links:
+      - mqtt
+    depends_on:
+      - mqtt
+  fetch2:
+    build: ./fetch
+    links:
+      - mqtt
+    depends_on:
+      - mqtt
+  fetch3:
+    build: ./fetch
+    links:
+      - mqtt
+    depends_on:
+      - mqtt
+  fetch4:
     build: ./fetch
     links:
       - mqtt
