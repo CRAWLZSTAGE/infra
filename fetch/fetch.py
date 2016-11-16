@@ -16,6 +16,8 @@ MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 
+FACEBOOK_ACCESS_TOKEN = 'access token here'
+
 while True:
     try:
         print "attempting connection"
@@ -42,6 +44,12 @@ def linkedIn_fetch(url):
             return response
     print "cant fetch page", url
     return None
+
+def facebook_fetch(facebook_id):
+    graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
+    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category')    
+
+    return facebook_company_info
 
 def callback(ch, method, properties, body):
     print("Method: {}".format(method))

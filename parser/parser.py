@@ -13,6 +13,8 @@ MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 
+FACEBOOK_ACCESS_TOKEN = 'access token here'
+
 while True:
     try:
         print "attempting connection"
@@ -98,6 +100,56 @@ def linkedIn_parse(url, html_response):
     print "cannot find element", url
     return None
 
+
+def concatenate_facebook_location(company_location_dict):
+    """
+    Parameters:
+    company_location_dict: dict, company's location dict from get_object
+
+    Outputs:
+    company_location: str, concatenated string 
+    """
+    company_street = company_location_dict['street'] if ('street' in company_location_dict) else ''
+    company_country = company_location_dict['country'] if ('country' in company_location_dict)  else ''
+    company_postal = company_location_dict['zip'] if ('zip' in company_location_dict) else ''
+    company_location = company_street + ', ' + company_country + ' ' + company_postal
+    company_location = company_location.strip()
+    company_location = company_location.strip(',')
+
+    return company_location
+
+
+def facebook_parse(facebook_company_info):
+    """
+    Parameters:
+    facebook_company_info: dict, from fetcher, using get_object function
+
+    Outputs:
+    company_info: dict , information of the company
+    other_companies_pages: array, each element containing an id and name
+    """
+
+    if facebook_company_info:
+        company_name = facebook_company_info['name'] if ('name' in facebook_company_info) else ''
+        company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else ''
+        company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else ''
+        company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else ''
+        if ('location' not in facebook_company_info):
+            company_location = ''
+        else:   
+            company_location = concatenate_facebook_location(facebook_company_info['location'])
+
+    company_info = {
+        'name': company_name,
+        'about': company_about,
+        'location': company_location,
+        'contact_number': company_phone,
+        'category': company_category
+    }
+
+    other_companies_pages = graph.get_connections(id=timbreplus_profile['id'], connection_name='likes')['data'] 
+
+    return company_info, other_companies_pages       
 
 def callback(ch, method, properties, body):
     print("Method: {}".format(method))
