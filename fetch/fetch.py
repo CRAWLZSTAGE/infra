@@ -11,12 +11,12 @@ import requests
 from time import sleep
 from exceptions import ValueError
 from lxml import html
+import facebook
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
-
-FACEBOOK_ACCESS_TOKEN = 'access token here'
+FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
 
 while True:
     try:
@@ -45,9 +45,11 @@ def linkedIn_fetch(url):
     print "cant fetch page", url
     return None
 
+graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
+
 def facebook_fetch(facebook_id):
-    graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
-    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category')    
+    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category')
+    facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
 
     return facebook_company_info
 
@@ -55,13 +57,28 @@ def callback(ch, method, properties, body):
     print("Method: {}".format(method))
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
-    url = json.loads(body)
+    data = json.loads(body)
+    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+    """
+    Exception handling, failing silently now (TODO)
+    """
+    if not data.has_key("protocol") or not data.has_key("resource_locator"):
+        return
+    if data["resource_locator"] == None:
+        return
     """
     TODO
     Pick appropriate fetcher from url
     """
-    html_response = linkedIn_fetch(url)
-    new_body = {"url": url, "html_response": html_response}
+    if data["protocol"] == "http":
+        html_response = linkedIn_fetch(data["resource_locator"])
+        new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response}
+    elif data["protocol"] == "fb":
+        fb_response = facebook_fetch(data["resource_locator"])
+        new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response}
+    else:
+        return
+    
     """
     TODO
     Handle Null fetched url
@@ -74,7 +91,7 @@ def callback(ch, method, properties, body):
             delivery_mode = 1
         )
     )
-    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+    
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='fetch')

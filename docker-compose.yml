@@ -17,24 +17,28 @@ services:
       - mqtt
     depends_on:
       - mqtt
+    env_file: _deployment/fetch.env
   fetch2:
     build: ./fetch
     links:
       - mqtt
     depends_on:
       - mqtt
+    env_file: _deployment/fetch.env
   fetch3:
     build: ./fetch
     links:
       - mqtt
     depends_on:
       - mqtt
+    env_file: _deployment/fetch.env
   fetch4:
     build: ./fetch
     links:
       - mqtt
     depends_on:
       - mqtt
+    env_file: _deployment/fetch.env
   parser:
     build: ./parser
     links:

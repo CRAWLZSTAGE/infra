@@ -81,7 +81,10 @@ def callback(ch, method, properties, body):
     data = json.loads(body)
     if not data.has_key("org_name"):
         return
-    newContact = Contact(org_name=data["org_name"])
+    try:
+        newContact = Contact.select().where(Contact.org_name == data["org_name"]).get()
+    except Exception:
+        newContact = Contact(org_name=data["org_name"])
     if data.has_key("contact_no"):
         newContact.contact_no = data["contact_no"]
     if data.has_key("org_type"):

@@ -33,6 +33,10 @@ class Record(BaseModel):
     url = CharField(primary_key=True)
     last_accessed = DateTimeField(default=datetime.utcnow())
 
+class Record_fb(BaseModel):
+    fb_id = CharField(primary_key=True)
+    last_accessed = DateTimeField(default=datetime.utcnow())
+
 while True:
     try:
         print "attemption DB connection at ", DB_HOST
@@ -44,6 +48,9 @@ while True:
 
 if not Record.table_exists():
     Record.create_table()
+
+if not Record_fb.table_exists():
+    Record_fb.create_table()
 
 while True:
     try:
@@ -60,7 +67,14 @@ ingress_channel.queue_declare(queue='filter', durable=True)
 egress_channel = mqtt_connection.channel()
 egress_channel.queue_declare(queue='fetch', durable=True)
 
-def seen(website):
+def seen_fb(facebook_id):
+    try:
+        Record_fb.select().where(Record_fb.fb_id == facebook_id).get()
+        return True
+    except Exception:
+        return False
+
+def seen_website(website):
     """
     TODO: test this!
     """
@@ -74,20 +88,37 @@ def callback(ch, method, properties, body):
     print("Method: {}".format(method))
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
-    raw_data = json.loads(body)
-    for website in raw_data:
-        if not seen(website):
-            egress_channel.basic_publish(
-                exchange='',
-                routing_key='fetch',
-                body=json.dumps(website),
-                properties=pika.BasicProperties(
-                    delivery_mode = 1
-                )
-            )
-            newRecord = Record(url=website)
-            newRecord.save(force_insert=True)
     ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+    raw_data = json.loads(body)
+    if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol"):
+        return
+    potential_leads = raw_data["potential_leads"]
+    protocol = raw_data["protocol"]
+
+    for lead in potential_leads:
+        if protocol == "fb":
+            if not seen_fb(lead):
+                newRecord = Record_fb(fb_id=lead)
+                newRecord.save(force_insert=True)
+            else:
+                return
+        if protocol == "html":
+            if not seen_website(lead):
+                newRecord = Record(url=lead)
+                newRecord.save(force_insert=True)
+            else:
+                return
+    fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
+    egress_channel.basic_publish(
+        exchange='',
+        routing_key='fetch',
+        body=json.dumps(fetch_data),
+        properties=pika.BasicProperties(
+            delivery_mode = 1
+        )
+    )
+                
+    
 
 
 ingress_channel.basic_qos(prefetch_count=1)

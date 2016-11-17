@@ -1,3 +1,8 @@
+# Deployment files
+_deployment/*
+*.env
+
+
 # Ansible
 *.retry
 

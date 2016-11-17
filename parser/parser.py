@@ -84,7 +84,7 @@ def linkedIn_parse(url, datafrom_xpath):
             'follower_count': follower_count,
             'specialities': specialities,
             'country': country,
-            'url': url,
+            'url': url
         }
 
         for coy in alsoViewed:
@@ -93,25 +93,6 @@ def linkedIn_parse(url, datafrom_xpath):
     except:
         print "cant parse page", url
         return [ None, None ]
-
-
-def concatenate_facebook_location(company_location_dict):
-    """
-    Parameters:
-    company_location_dict: dict, company's location dict from get_object
-
-    Outputs:
-    company_location: str, concatenated string 
-    """
-    company_street = company_location_dict['street'] if ('street' in company_location_dict) else ''
-    company_country = company_location_dict['country'] if ('country' in company_location_dict)  else ''
-    company_postal = company_location_dict['zip'] if ('zip' in company_location_dict) else ''
-    company_location = company_street + ', ' + company_country + ' ' + company_postal
-    company_location = company_location.strip()
-    company_location = company_location.strip(',')
-
-    return company_location
-
 
 def facebook_parse(facebook_company_info):
     """
@@ -128,40 +109,53 @@ def facebook_parse(facebook_company_info):
         company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else ''
         company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else ''
         company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else ''
-        if ('location' not in facebook_company_info):
-            company_location = ''
-        else:   
-            company_location = concatenate_facebook_location(facebook_company_info['location'])
+        company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else ''
+        company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else ''
+        company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else ''
+
+    potential_leads = []
+
+    """
+    TODO
+    this section
+    """
+    for companies in facebook_company_info["connections"]:
+        potential_leads.append(companies["id"])
 
     company_info = {
-        'name': company_name,
-        'about': company_about,
-        'location': company_location,
-        'contact_number': company_phone,
-        'category': company_category
+        'org_name': company_name,
+        'description': company_about,
+        'address': company_street,
+        'country': company_country,
+        'address': company_postal,
+        'contact_no': company_phone,
+        'industry': company_category
     }
 
-    other_companies_pages = graph.get_connections(id=timbreplus_profile['id'], connection_name='likes')['data'] 
-
-    return company_info, other_companies_pages       
+    return company_info, potential_leads       
 
 def callback(ch, method, properties, body):
     print("Method: {}".format(method))
     print("Properties: {}".format(properties))
     print("Message: {}".format(body))
-    raw_data = json.loads(body)
+    data = json.loads(body)
     ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    if not raw_data.has_key("url") or not raw_data.has_key("html_response"):
+    if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
+        raise Exception
         return
-    if raw_data.has_key("html_response") == None:
+    if data.has_key("raw_response") == None:
+        raise Exception
         return
     """
     TODO
     use appropriate parser according to URL
     """
-    contact, list_of_companies = linkedIn_parse(raw_data["url"], raw_data["html_response"])
-    if contact == None:
-        return
+    if data["protocol"] == "http":
+        contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
+        if contact == None:
+            return
+    elif data["protocol"] == "fb":
+        contact, potential_leads = facebook_parse(data["raw_response"])
     store_egress_channel.basic_publish(
         exchange='',
         routing_key='store',
@@ -170,10 +164,11 @@ def callback(ch, method, properties, body):
             delivery_mode = 1
         )
     )
+    leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
     filter_egress_channel.basic_publish(
         exchange='',
         routing_key='filter',
-        body=json.dumps(list_of_companies),
+        body=json.dumps(leads_data),
         properties=pika.BasicProperties(
             delivery_mode = 1
         )

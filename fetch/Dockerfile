@@ -47,6 +47,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python
 ENV MQTT_HOST=mqtt
 ENV MQTT_USER=NOT_THIS_USER
 ENV MQTT_PASSWORD=NOT_THIS_PASSWORD
+ENV FACEBOOK_ACCESS_TOKEN=NOT_THIS_TOKEN
 
 COPY requirements.txt /
 COPY fetch.py /
