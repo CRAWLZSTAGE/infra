@@ -1,4 +1,4 @@
-import os
+import os, sys, socket
 import pika
 import json
 import time
@@ -9,6 +9,7 @@ store specific dependencies
 
 from peewee import *
 
+# DEBUG = int(os.environ.get('DEBUG'))
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
@@ -75,44 +76,52 @@ ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='store', durable=True)
 
 def callback(ch, method, properties, body):
-    print("Method: {}".format(method))
-    print("Properties: {}".format(properties))
-    print("Message: {}".format(body))
+    sys.stderr.write("Received Message \n" + body + "\n")
+    # print("Method: {}".format(method))
+    # print("Properties: {}".format(properties))
+    # print("Message: {}".format(body))
+    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     data = json.loads(body)
     if not data.has_key("org_name"):
         return
-    try:
-        newContact = Contact.select().where(Contact.org_name == data["org_name"]).get()
-    except Exception:
+
+    newContact = Contact.select().where(Contact.org_name == data["org_name"])
+    if newContact.exists():
+        newContact = newContact.get()
+    else:
         newContact = Contact(org_name=data["org_name"])
+        try:
+            newContact.save(force_insert=True)
+        except Exception, e:
+            """
+            Collide, should not happen!
+            """
+            sys.stderr.write(" [X] Error thrown in " + socket.gethostname() + "\n" + str(e)) 
+            psql_db.rollback()
+
     if data.has_key("contact_no"):
-        newContact.contact_no = data["contact_no"]
+        Contact.update(contact_no = data["contact_no"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("org_type"):
-        newContact.org_type = data["org_type"]
+        Contact.update(org_type = data["org_type"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("description"):
-        newContact.description = data["description"]
+        Contact.update(description = data["description"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("address"):
-        newContact.address = data["address"]
+        Contact.update(address = data["address"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("city"):
-        newContact.city = data["city"]
+        Contact.update(city = data["city"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("state"):
-        newContact.state = data["state"]
+        Contact.update(state = data["state"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("postal_code") and type(data["postal_code"]) == int:
-        newContact.postal_code = data["postal_code"]
+        Contact.update(postal_code = data["postal_code"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("fax_no"):
-        newContact.fax_no = data["fax_no"]
+        Contact.update(fax_no = data["fax_no"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("email_address"):
-        newContact.email_address = data["email_address"]
+        Contact.update(email_address = data["email_address"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("website"):
-        newContact.website = data["website"]
+        Contact.update(website = data["website"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("follower_count") and type(data["follower_count"]) == int:
-        newContact.follower_count = data["follower_count"]
-    """
-    TODO
-    Check for collision
-    """
-    newContact.save(force_insert=True)
-    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+        Contact.update(follower_count = data["follower_count"]).where(Contact.org_name == data["org_name"]).execute()
+    
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='store')

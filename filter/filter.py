@@ -1,4 +1,4 @@
-import os
+import os, sys
 import pika
 import json
 import time
@@ -85,9 +85,10 @@ def seen_website(website):
         return False
 
 def callback(ch, method, properties, body):
-    print("Method: {}".format(method))
-    print("Properties: {}".format(properties))
-    print("Message: {}".format(body))
+    sys.stderr.write("Received Message \n" + body + "\n")
+    # print("Method: {}".format(method))
+    # print("Properties: {}".format(properties))
+    # print("Message: {}".format(body))
     ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     raw_data = json.loads(body)
     if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol"):
@@ -108,15 +109,15 @@ def callback(ch, method, properties, body):
                 newRecord.save(force_insert=True)
             else:
                 return
-    fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
-    egress_channel.basic_publish(
-        exchange='',
-        routing_key='fetch',
-        body=json.dumps(fetch_data),
-        properties=pika.BasicProperties(
-            delivery_mode = 1
+        fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
+        egress_channel.basic_publish(
+            exchange='',
+            routing_key='fetch',
+            body=json.dumps(fetch_data),
+            properties=pika.BasicProperties(
+                delivery_mode = 1
+            )
         )
-    )
                 
     
 

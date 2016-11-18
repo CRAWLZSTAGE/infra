@@ -5,9 +5,11 @@ FROM debian:jessie
 MAINTAINER Jeremias Wong <jellyjellyrobot@gmail.com>
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TERM=linux
+ENV TERMINFO=/etc/terminfo
 
 # For local development, Andrew's mirror is better
-RUN sed --in-place 's/httpredir.debian.org/mirror.0x.sg/' /etc/apt/sources.list
+RUN sed --in-place 's/deb.debian.org/mirror.0x.sg/' /etc/apt/sources.list
 
 RUN until apt-get update; \
   do echo "retrying update"; \

@@ -1,4 +1,4 @@
-import os
+import os, sys
 import pika
 import json
 import time
@@ -135,9 +135,10 @@ def facebook_parse(facebook_company_info):
     return company_info, potential_leads       
 
 def callback(ch, method, properties, body):
-    print("Method: {}".format(method))
-    print("Properties: {}".format(properties))
-    print("Message: {}".format(body))
+    sys.stderr.write("Received Message \n" + body + "\n")
+    # print("Method: {}".format(method))
+    # print("Properties: {}".format(properties))
+    # print("Message: {}".format(body))
     data = json.loads(body)
     ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
