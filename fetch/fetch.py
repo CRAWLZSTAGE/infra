@@ -48,9 +48,9 @@ def linkedIn_fetch(url):
 graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
 
 def facebook_fetch(facebook_id):
+    sys.stderr.write("Received Message \n" + FACEBOOK_ACCESS_TOKEN + "\n")
     facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category')
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
-
     return facebook_company_info
 
 def callback(ch, method, properties, body):
@@ -76,6 +76,8 @@ def callback(ch, method, properties, body):
         new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response}
     elif data["protocol"] == "fb":
         fb_response = facebook_fetch(data["resource_locator"])
+        if fb_response == None:
+            return
         new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response}
     else:
         return

@@ -2,12 +2,17 @@ import os, sys
 import pika
 import json
 import time
+
 """
 filter specific dependencies
 """
 
 from peewee import *
 from datetime import datetime
+
+"""
+Environment Variables
+"""
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
@@ -90,7 +95,12 @@ def callback(ch, method, properties, body):
     # print("Properties: {}".format(properties))
     # print("Message: {}".format(body))
     ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    raw_data = json.loads(body)
+    try:
+        raw_data = json.loads(body)
+    except:
+        print "Unable to read object"
+        return
+
     if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol"):
         return
     potential_leads = raw_data["potential_leads"]
