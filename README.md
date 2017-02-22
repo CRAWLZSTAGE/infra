@@ -20,7 +20,7 @@ This project is split into 5 containers, which can be scaled to fit processing t
 ## Deployment
 
 Currently, the code is/will be (TODO) be tested on
-- a local environment with 8 cores
+- a local environment with 4 cores
 - 1 * DigitalOcean instance quad core instance
 We intend to scale this up to span multiple computers in the future.
 
@@ -29,3 +29,5 @@ We intend to scale this up to span multiple computers in the future.
 [Installation](INSTALL.md) instructions can be found here.
 
 [Testing](TESTING.md) instructions can be found here.
+
+[Current Deployment](DEPLOYMENT.md) information can be found here.

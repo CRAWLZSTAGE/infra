@@ -12,6 +12,22 @@ eval $(docker-machine env local-dev)
 docker compose build
 docker-compose up
 
+# Teardown
+docker-compose rm
+
+```
+
+## Env file
+
+Enviornmental variables are stored in _deployment. The files and expected 
+
+```
+
+#_deployment/fetch.env
+FACEBOOK_ACCESS_TOKEN=******
+## https://developers.facebook.com/tools/accesstoken/
+
+
 ```
 
 
@@ -30,6 +46,13 @@ eval $(docker-machine env local-dev)
 docker-machine ssh local-dev sudo mkdir -p /mnt/sda1/ext
 
 ```
+
+## Remote Deployment
+
+```sh
+
+```
+
 
 ## Make disk space great again!
 

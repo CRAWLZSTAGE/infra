@@ -9,12 +9,7 @@ Please make sure you have the prerequisite software on your KOMPUTER
 
 # Python python, pip
 
-brew install python
-
-# Install utilities
-
-pip install -U --upgrade pip
-
-pip install -U bpython tweepy pandas matplotlib
+brew update
+brew install docker docker-compose
 
 ```
