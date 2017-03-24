@@ -13,16 +13,16 @@ MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 
-FACEBOOK_ACCESS_TOKEN = 'access token here'
+"""
+RabbitMQ support courtesy of Pika
+"""
 
 while True:
     try:
-        print "attempting connection"
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
     except Exception:
-        print "connection failed"
         time.sleep(5)
 
 ingress_channel = mqtt_connection.channel()
@@ -31,6 +31,11 @@ store_egress_channel = mqtt_connection.channel()
 store_egress_channel.queue_declare(queue='store', durable=True)
 filter_egress_channel = mqtt_connection.channel()
 filter_egress_channel.queue_declare(queue='filter', durable=True)
+
+
+"""
+Parsers
+"""
 
 def linkedIn_parse(url, datafrom_xpath):
     """
@@ -91,8 +96,7 @@ def linkedIn_parse(url, datafrom_xpath):
             list_of_companies.append(coy["homeUrl"])
         return [ contact, list_of_companies ]
     except:
-        print "cant parse page", url
-        return [ None, None ]
+        raise Exception("Unable to parse linkedIn body" + datafrom_xpath)
 
 def facebook_parse(facebook_company_info):
     """
@@ -134,46 +138,53 @@ def facebook_parse(facebook_company_info):
 
     return company_info, potential_leads       
 
+
+"""
+Message Handling
+"""
+
+
 def callback(ch, method, properties, body):
     sys.stderr.write("Received Message \n" + body + "\n")
-    # print("Method: {}".format(method))
-    # print("Properties: {}".format(properties))
-    # print("Message: {}".format(body))
-    data = json.loads(body)
-    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
-        raise Exception
-        return
-    if data.has_key("raw_response") == None:
-        raise Exception
-        return
-    """
-    TODO
-    use appropriate parser according to URL
-    """
-    if data["protocol"] == "http":
-        contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
-        if contact == None:
-            return
-    elif data["protocol"] == "fb":
-        contact, potential_leads = facebook_parse(data["raw_response"])
-    store_egress_channel.basic_publish(
-        exchange='',
-        routing_key='store',
-        body=json.dumps(contact),
-        properties=pika.BasicProperties(
-            delivery_mode = 1
+    try:
+        data = json.loads(body)
+        if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
+            raise Exception("Body malformed")
+        if data.has_key("raw_response") == None:
+            raise Exception("None Message Recieved")
+        """
+        TODO
+        use appropriate parser according to URL
+        """
+        if data["protocol"] == "http":
+            contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
+            if contact == None:
+                return
+        elif data["protocol"] == "fb":
+            contact, potential_leads = facebook_parse(data["raw_response"])
+        store_egress_channel.basic_publish(
+            exchange='',
+            routing_key='store',
+            body=json.dumps(contact),
+            properties=pika.BasicProperties(
+                delivery_mode = 1
+            )
         )
-    )
-    leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
-    filter_egress_channel.basic_publish(
-        exchange='',
-        routing_key='filter',
-        body=json.dumps(leads_data),
-        properties=pika.BasicProperties(
-            delivery_mode = 1
+        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
+        filter_egress_channel.basic_publish(
+            exchange='',
+            routing_key='filter',
+            body=json.dumps(leads_data),
+            properties=pika.BasicProperties(
+                delivery_mode = 1
+            )
         )
-    )
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+    finally:
+        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+
+
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='parse')
