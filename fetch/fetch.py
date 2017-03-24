@@ -19,19 +19,17 @@ MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
 
 """
+Note:
 
 Should write classes and subclasses to deal with fetching from different sources.
-
 """
 
 while True:
     try:
-        print "attempting connection"
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
     except Exception:
-        print "connection failed"
         time.sleep(5)
 
 ingress_channel = mqtt_connection.channel()
@@ -48,7 +46,6 @@ def linkedIn_fetch(url):
         datafrom_xpath = doc.xpath('//code[@id="stream-right-rail-embed-id-content"]//text()')
         if datafrom_xpath:
             return datafrom_xpath
-    print "cant fetch page", url
     return None
 
 graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
@@ -60,10 +57,6 @@ def facebook_fetch(facebook_id):
     return facebook_company_info
 
 def callback(ch, method, properties, body):
-    
-    # print("Method: {}".format(method))
-    # print("Properties: {}".format(properties))
-    # print("Message: {}".format(body))
     try:
         data = json.loads(body)
         if not data.has_key("protocol") or not data.has_key("resource_locator"):
@@ -100,7 +93,3 @@ def callback(ch, method, properties, body):
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='fetch')
 ingress_channel.start_consuming()
-
-
-
-
