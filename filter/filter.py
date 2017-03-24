@@ -24,8 +24,9 @@ DB_NAME = os.environ.get('DB_NAME')
 
 
 """
-This script uses the storm ORM module from canonical
-https://storm.canonical.com/FrontPage#Documentation
+PSQL ORM courtesy of PeeWee
+
+No need for schema.sql since PeeWee can take care of this for us!
 """
 
 psql_db = PostgresqlDatabase(DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
@@ -44,11 +45,9 @@ class Record_fb(BaseModel):
 
 while True:
     try:
-        print "attemption DB connection at ", DB_HOST
         psql_db.connect()
         break
     except Exception:
-        print "connection failed"
         time.sleep(5)
 
 if not Record.table_exists():
@@ -57,9 +56,14 @@ if not Record.table_exists():
 if not Record_fb.table_exists():
     Record_fb.create_table()
 
+
+"""
+RabbitMQ support courtesy of Pika
+"""
+
+
 while True:
     try:
-        print "attempting pika connection at ", MQTT_HOST
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
@@ -71,6 +75,12 @@ ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='filter', durable=True)
 egress_channel = mqtt_connection.channel()
 egress_channel.queue_declare(queue='fetch', durable=True)
+
+
+"""
+Selectors
+"""
+
 
 def seen_fb(facebook_id):
     try:
@@ -89,47 +99,43 @@ def seen_website(website):
     except Exception:
         return False
 
+"""
+Message Handling
+"""
+
 def callback(ch, method, properties, body):
-    sys.stderr.write("Received Message \n" + body + "\n")
-    # print("Method: {}".format(method))
-    # print("Properties: {}".format(properties))
-    # print("Message: {}".format(body))
-    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     try:
         raw_data = json.loads(body)
-    except:
-        print "Unable to read object"
-        return
-
-    if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol"):
-        return
-    potential_leads = raw_data["potential_leads"]
-    protocol = raw_data["protocol"]
-
-    for lead in potential_leads:
-        if protocol == "fb":
-            if not seen_fb(lead):
-                newRecord = Record_fb(fb_id=lead)
-                newRecord.save(force_insert=True)
-            else:
-                return
-        if protocol == "html":
-            if not seen_website(lead):
-                newRecord = Record(url=lead)
-                newRecord.save(force_insert=True)
-            else:
-                return
-        fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
-        egress_channel.basic_publish(
-            exchange='',
-            routing_key='fetch',
-            body=json.dumps(fetch_data),
-            properties=pika.BasicProperties(
-                delivery_mode = 1
+        if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol"):
+            raise Exception("Body malformed")
+        potential_leads = raw_data["potential_leads"]
+        protocol = raw_data["protocol"]
+        for lead in potential_leads:
+            if protocol == "fb":
+                if not seen_fb(lead):
+                    newRecord = Record_fb(fb_id=lead)
+                    newRecord.save(force_insert=True)
+                else:
+                    return
+            if protocol == "html":
+                if not seen_website(lead):
+                    newRecord = Record(url=lead)
+                    newRecord.save(force_insert=True)
+                else:
+                    return
+            fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
+            egress_channel.basic_publish(
+                exchange='',
+                routing_key='fetch',
+                body=json.dumps(fetch_data),
+                properties=pika.BasicProperties(
+                    delivery_mode = 1
+                )
             )
-        )
-                
-    
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+    finally:
+        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
 
 ingress_channel.basic_qos(prefetch_count=1)

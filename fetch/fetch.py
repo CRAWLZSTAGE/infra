@@ -24,6 +24,10 @@ Note:
 Should write classes and subclasses to deal with fetching from different sources.
 """
 
+"""
+RabbitMQ support courtesy of Pika
+"""
+
 while True:
     try:
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
@@ -36,6 +40,10 @@ ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='fetch', durable=True)
 egress_channel = mqtt_connection.channel()
 egress_channel.queue_declare(queue='parse', durable=True)
+
+"""
+Fetchers
+"""
 
 def linkedIn_fetch(url):
     for i in range(5):
@@ -55,6 +63,11 @@ def facebook_fetch(facebook_id):
     facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category')
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
     return facebook_company_info
+
+"""
+Message Handling
+"""
+
 
 def callback(ch, method, properties, body):
     try:
