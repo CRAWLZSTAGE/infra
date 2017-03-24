@@ -145,7 +145,6 @@ Message Handling
 
 
 def callback(ch, method, properties, body):
-    sys.stderr.write("Received Message \n" + body + "\n")
     try:
         data = json.loads(body)
         if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
