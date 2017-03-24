@@ -109,13 +109,13 @@ def facebook_parse(facebook_company_info):
     """
 
     if facebook_company_info:
-        company_name = facebook_company_info['name'] if ('name' in facebook_company_info) else ''
-        company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else ''
-        company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else ''
-        company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else ''
-        company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else ''
-        company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else ''
-        company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else ''
+        company_name = facebook_company_info['name'] if ('name' in facebook_company_info) else None
+        company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else None
+        company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else None
+        company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else None
+        company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else None
+        company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else None
+        company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else None
 
     potential_leads = []
 
