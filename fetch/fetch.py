@@ -18,6 +18,12 @@ MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
 
+"""
+
+Should write classes and subclasses to deal with fetching from different sources.
+
+"""
+
 while True:
     try:
         print "attempting connection"
@@ -54,46 +60,41 @@ def facebook_fetch(facebook_id):
     return facebook_company_info
 
 def callback(ch, method, properties, body):
-    sys.stderr.write("Received Message \n" + body + "\n")
+    
     # print("Method: {}".format(method))
     # print("Properties: {}".format(properties))
     # print("Message: {}".format(body))
-    data = json.loads(body)
-    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    """
-    Exception handling, failing silently now (TODO)
-    """
-    if not data.has_key("protocol") or not data.has_key("resource_locator"):
-        return
-    if data["resource_locator"] == None:
-        return
-    """
-    TODO
-    Pick appropriate fetcher from url
-    """
-    if data["protocol"] == "http":
-        html_response = linkedIn_fetch(data["resource_locator"])
-        new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response}
-    elif data["protocol"] == "fb":
-        fb_response = facebook_fetch(data["resource_locator"])
-        if fb_response == None:
+    try:
+        data = json.loads(body)
+        if not data.has_key("protocol") or not data.has_key("resource_locator"):
+            raise Exception("Body malformed")
+        if data["resource_locator"] == None:
+            raise Exception("Resource target unspecified")
+        if data["protocol"] == "http":
+            html_response = linkedIn_fetch(data["resource_locator"])
+            new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response}
+        elif data["protocol"] == "fb":
+            fb_response = facebook_fetch(data["resource_locator"])
+            if fb_response == None:
+                return
+            new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response}
+        else:
             return
-        new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response}
-    else:
-        return
-    
-    """
-    TODO
-    Handle Null fetched url
-    """
-    egress_channel.basic_publish(
-        exchange='',
-        routing_key='parse',
-        body=json.dumps(new_body),
-        properties=pika.BasicProperties(
-            delivery_mode = 1
+        if new_body == None:
+            raise Exception("Unable to fetch resource")
+        egress_channel.basic_publish(
+            exchange='',
+            routing_key='parse',
+            body=json.dumps(new_body),
+            properties=pika.BasicProperties(
+                delivery_mode = 1
+            )
         )
-    )
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+    finally:
+        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+    
     
 
 ingress_channel.basic_qos(prefetch_count=1)
