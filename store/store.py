@@ -134,6 +134,7 @@ def callback(ch, method, properties, body):
         updateContact(data)
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     

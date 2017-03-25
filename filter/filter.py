@@ -106,7 +106,7 @@ Message Handling
 def callback(ch, method, properties, body):
     try:
         raw_data = json.loads(body)
-        if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol"):
+        if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol") or not raw_data.has_key("depth"):
             raise Exception("Body malformed")
         potential_leads = raw_data["potential_leads"]
         protocol = raw_data["protocol"]
@@ -123,7 +123,7 @@ def callback(ch, method, properties, body):
                     newRecord.save(force_insert=True)
                 else:
                     return
-            fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
+            fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}
             egress_channel.basic_publish(
                 exchange='',
                 routing_key='fetch',
@@ -134,6 +134,7 @@ def callback(ch, method, properties, body):
             )
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 

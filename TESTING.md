@@ -26,7 +26,7 @@ Enviornmental variables are stored in _deployment. The files and expected
 #_deployment/fetch.env
 FACEBOOK_ACCESS_TOKEN=******
 ## https://developers.facebook.com/tools/accesstoken/
-
+'{"potential_leads": ["420608754800233"], "protocol": "fb", "depth": 1}'
 
 ```
 

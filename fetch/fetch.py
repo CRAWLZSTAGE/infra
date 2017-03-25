@@ -71,21 +71,21 @@ Message Handling
 def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
-        if not data.has_key("protocol") or not data.has_key("resource_locator"):
+        if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("depth"):
             raise Exception("Body malformed")
         if data["resource_locator"] == None:
             raise Exception("Resource target unspecified")
         if data["protocol"] == "http":
             html_response = linkedIn_fetch(data["resource_locator"])
-            new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response}
+            new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response, "depth": data["depth"]}
         elif data["protocol"] == "fb":
             fb_response = facebook_fetch(data["resource_locator"])
             if fb_response == None:
                 return
-            new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response}
+            new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response, "depth": data["depth"]}
         else:
             return
-        if new_body == None:
+        if new_body == None or new_body["raw_response"] == None:
             raise Exception("Unable to fetch resource")
         egress_channel.basic_publish(
             exchange='',
@@ -97,6 +97,7 @@ def callback(ch, method, properties, body):
         )
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
     

@@ -12,6 +12,7 @@ from lxml import html
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
+MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
 """
 RabbitMQ support courtesy of Pika
@@ -147,7 +148,7 @@ Message Handling
 def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
-        if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
+        if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response") or not data.has_key("depth"):
             raise Exception("Body malformed")
         if data.has_key("raw_response") == None:
             raise Exception("None Message Recieved")
@@ -169,7 +170,12 @@ def callback(ch, method, properties, body):
                 delivery_mode = 1
             )
         )
-        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
+        """
+        Recurse further if depth is not reached yet
+        """
+        if data["depth"] >= MAX_DEPTH:
+            return
+        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"], "depth": data["depth"] + 1}
         filter_egress_channel.basic_publish(
             exchange='',
             routing_key='filter',
@@ -180,6 +186,7 @@ def callback(ch, method, properties, body):
         )
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
