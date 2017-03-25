@@ -30,8 +30,6 @@ while True:
 
 ingress_channel_parse = mqtt_connection.channel()
 ingress_channel_parse.queue_declare(queue='parse', durable=True)
-ingress_channel_depth = mqtt_connection.channel()
-ingress_channel_depth.queue_declare(queue='depth', durable=True)
 store_egress_channel = mqtt_connection.channel()
 store_egress_channel.queue_declare(queue='store', durable=True)
 filter_egress_channel = mqtt_connection.channel()
@@ -153,6 +151,9 @@ def parseCallback(ch, method, properties, body):
     try:
         global MAX_DEPTH
         data = json.loads(body)
+        if data.has_key("maxDepth") and type(data["maxDepth"]) == int:
+            MAX_DEPTH = int(data["maxDepth"])
+            return
         if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response") or not data.has_key("depth"):
             raise Exception("Body malformed")
         if data.has_key("raw_response") == None:
@@ -198,51 +199,9 @@ def parseCallback(ch, method, properties, body):
         ingress_channel_parse.basic_ack(delivery_tag = method.delivery_tag)
 
 
-def maxDepth(ch, method, properties, body):
-    try:
-        global MAX_DEPTH
-        data = json.loads(body)
-        if not data.has_key("maxDepth") or type(data["maxDepth"]) != int:
-            raise Exception("Body malformed")
-        MAX_DEPTH = data["maxDepth"]
-    except Exception as e:
-        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
-        sys.stderr.flush()
-    finally:
-        ingress_channel_depth.basic_ack(delivery_tag = method.delivery_tag)
-
-def consume_messages(channel, callback, queueName):
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(callback, queue=queueName)
-    channel.start_consuming()
-
-"""
-Handle multiple blocking pika threads
-
-Issue with globals
-https://github.com/pika/pika/issues/158
-"""
-
-THREADS = list()
-
-# Create the two listening threads.
-THREADS.append(threading.Thread(target=consume_messages,
-                                args=(ingress_channel_parse, parseCallback,
-                                      'parse')))
-THREADS.append(threading.Thread(target=consume_messages,
-                                args=(ingress_channel_depth, maxDepth,
-                                      'depth')))
-
-# Start the threads that handle incoming messages.
-for thread in THREADS:
-    thread.daemon = True
-    thread.start()
-
-# Wait until the threads are dead.
-while sum([thread.isAlive() for thread in THREADS]):
-    time.sleep(1)
-
-
+ingress_channel_parse.basic_qos(prefetch_count=1)
+ingress_channel_parse.basic_consume(parseCallback, queue='parse')
+ingress_channel_parse.start_consuming()
 
 
 

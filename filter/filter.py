@@ -35,11 +35,11 @@ class BaseModel(Model):
     class Meta:
         database = psql_db
 
-class Record(BaseModel):
+class Record_LinkedIn(BaseModel):
     url = CharField(primary_key=True)
     last_accessed = DateTimeField(default=datetime.utcnow())
 
-class Record_fb(BaseModel):
+class Record_Fb(BaseModel):
     fb_id = CharField(primary_key=True)
     last_accessed = DateTimeField(default=datetime.utcnow())
 
@@ -50,11 +50,11 @@ while True:
     except Exception:
         time.sleep(5)
 
-if not Record.table_exists():
-    Record.create_table()
+if not Record_LinkedIn.table_exists():
+    Record_LinkedIn.create_table()
 
-if not Record_fb.table_exists():
-    Record_fb.create_table()
+if not Record_Fb.table_exists():
+    Record_Fb.create_table()
 
 
 """
@@ -81,20 +81,25 @@ egress_channel.queue_declare(queue='fetch', durable=True)
 Selectors
 """
 
+def retrieve_Fb(facebook_id):
+    return Record_Fb.select().where(Record_Fb.fb_id == facebook_id).get()
 
 def seen_fb(facebook_id):
     try:
-        Record_fb.select().where(Record_fb.fb_id == facebook_id).get()
+        retrieve_Fb(facebook_id)
         return True
     except Exception:
         return False
+
+def retrieve_LinkedIn(website):
+    return Record_LinkedIn.select().where(Record_LinkedIn.url == website).get()
 
 def seen_website(website):
     """
     TODO: test this!
     """
     try:
-        Record.select().where(Record.url == website).get()
+        retrieve_LinkedIn(website)
         return True
     except Exception:
         return False
@@ -103,24 +108,53 @@ def seen_website(website):
 Message Handling
 """
 
+def seen_fb_time_ago(lead):
+    return False
+
+def seen_html_time_ago(lead):
+    return False
+
 def callback(ch, method, properties, body):
     try:
         raw_data = json.loads(body)
-        if not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol") or not raw_data.has_key("depth"):
-            raise Exception("Body malformed")
+        if (not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol") or not raw_data.has_key("depth")):
+            if raw_data.has_key("delete") and raw_data.has_key("resource_locator") and raw_data.has_key("protocol"):
+                if raw_data["protocol"] == "fb":
+                    if seen_fb(raw_data["resource_locator"]):
+                        retrieve_Fb(raw_data["resource_locator"]).delete_instance()
+                    return
+                if raw_data["protocol"] == "html":
+                    if seen_website(raw_data["resource_locator"]):
+                        retrieve_LinkedIn(raw_data["resource_locator"]).delete_instance()
+                    return
+                raise Exception("Unknown protocol requested during deletion")
+            else:
+                raise Exception("Body malformed")
         potential_leads = raw_data["potential_leads"]
         protocol = raw_data["protocol"]
         for lead in potential_leads:
             if protocol == "fb":
                 if not seen_fb(lead):
-                    newRecord = Record_fb(fb_id=lead)
+                    newRecord = Record_Fb(fb_id=lead, last_accessed = datetime.utcnow())
                     newRecord.save(force_insert=True)
+                    """
+                    TODO: Handle elif difference
+                    """
+                elif seen_fb_time_ago(lead):
+                    Record_Fb.update(last_accessed = datetime.utcnow()).where(fb_id == lead).execute()
+                    return
                 else:
                     return
             if protocol == "html":
                 if not seen_website(lead):
-                    newRecord = Record(url=lead)
+                    newRecord = Record_LinkedIn(url=lead, last_accessed = datetime.utcnow())
                     newRecord.save(force_insert=True)
+                    """
+                    TODO: Handle elif difference
+                    """
+                elif seen_html_time_ago(lead):
+                    Record_LinkedIn.update(last_accessed = datetime.utcnow()).where(url == lead).execute()
+                    return
                 else:
                     return
             fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}
@@ -134,7 +168,7 @@ def callback(ch, method, properties, body):
                 )
             )
     except Exception as e:
-        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        sys.stderr.write(str(e) + "Unable to filter: \n" + body + "\n")
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
