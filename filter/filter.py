@@ -133,7 +133,7 @@ def callback(ch, method, properties, body):
                     if seen_fb(raw_data["resource_locator"]):
                         retrieve_Fb(raw_data["resource_locator"]).delete_instance()
                     return
-                if raw_data["protocol"] == "html":
+                if raw_data["protocol"] == "linkedin":
                     if seen_website(raw_data["resource_locator"]):
                         retrieve_LinkedIn(raw_data["resource_locator"]).delete_instance()
                     return
@@ -156,7 +156,7 @@ def callback(ch, method, properties, body):
                     sys.stderr.flush()
                 else:
                     return
-            if protocol == "html":
+            if protocol == "linkedin":
                 if not seen_website(lead):
                     newRecord = Record_LinkedIn(url=lead, last_accessed = datetime.utcnow())
                     newRecord.save(force_insert=True)

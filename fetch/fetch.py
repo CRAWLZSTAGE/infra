@@ -110,7 +110,7 @@ def callback(ch, method, properties, body):
         """
         Fetch Data
         """
-        if data["protocol"] == "http":
+        if data["protocol"] == "linkedin":
             try:
                 html_response = linkedIn_fetch(data["resource_locator"])
                 if html_response == None:

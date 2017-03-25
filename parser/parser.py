@@ -163,7 +163,7 @@ def parseCallback(ch, method, properties, body):
         TODO
         use appropriate parser according to URL
         """
-        if data["protocol"] == "http":
+        if data["protocol"] == "linkedin":
             contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
             if contact == None:
                 return
