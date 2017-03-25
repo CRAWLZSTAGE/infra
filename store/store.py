@@ -46,6 +46,8 @@ class Contact(BaseModel):
     website = TextField(null = True)
     industry = CharField(null = True)
     follower_count = IntegerField(default=0, null = True)
+    linkedin_resource_locator = TextField(null = True)
+    facebook_resource_locator = TextField(null = True)
 
 while True:
     try:
@@ -106,6 +108,10 @@ def updateContact(data):
         Contact.update(website = data["website"]).where(Contact.org_name == data["org_name"]).execute()
     if data.has_key("follower_count") and type(data["follower_count"]) == int and data["follower_count"] != None:
         Contact.update(follower_count = data["follower_count"]).where(Contact.org_name == data["org_name"]).execute()
+    if data.has_key("linkedin_resource_locator") and data["linkedin_resource_locator"] != None:
+        Contact.update(linkedin_resource_locator = data["linkedin_resource_locator"]).where(Contact.org_name == data["org_name"]).execute()
+    if data.has_key("facebook_resource_locator") and data["facebook_resource_locator"] != None:
+        Contact.update(facebook_resource_locator = str(data["facebook_resource_locator"])).where(Contact.org_name == data["org_name"]).execute()
     return
 
 
@@ -121,6 +127,7 @@ def callback(ch, method, properties, body):
         newContact = Contact.select().where(Contact.org_name == data["org_name"])
         if newContact.exists():
             newContact = newContact.get()
+            """sys.stderr.write("Collision: " + str(newContact.facebook_resource_locator) + ": " + data["facebook_resource_locator"] + "\n")"""
         else:
             newContact = Contact(org_name=data["org_name"])
             try:

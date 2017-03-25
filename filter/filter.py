@@ -21,6 +21,8 @@ DB_HOST = os.environ.get('DB_HOST')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
 DB_NAME = os.environ.get('DB_NAME')
+RECORD_TIMEOUT = os.environ.get('RECORD_TIMEOUT') 
+"""In Seconds"""
 
 
 """
@@ -109,9 +111,13 @@ Message Handling
 """
 
 def seen_fb_time_ago(lead):
+    if (datetime.utcnow() - retrieve_Fb(lead).last_accessed).seconds > RECORD_TIMEOUT:
+        return True
     return False
 
-def seen_html_time_ago(lead):
+def seen_linkedin_time_ago(lead):
+    if (datetime.utcnow() - retrieve_LinkedIn(lead).last_accessed).seconds > RECORD_TIMEOUT:
+        return True
     return False
 
 def callback(ch, method, properties, body):
@@ -120,6 +126,10 @@ def callback(ch, method, properties, body):
         if (not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol") or not raw_data.has_key("depth")):
             if raw_data.has_key("delete") and raw_data.has_key("resource_locator") and raw_data.has_key("protocol"):
                 if raw_data["protocol"] == "fb":
+                    """
+                    sys.stderr.write("Deleted: " + str(raw_data["resource_locator"]) + "\n")
+                    sys.stderr.flush()
+                    """
                     if seen_fb(raw_data["resource_locator"]):
                         retrieve_Fb(raw_data["resource_locator"]).delete_instance()
                     return
@@ -142,7 +152,8 @@ def callback(ch, method, properties, body):
                     """
                 elif seen_fb_time_ago(lead):
                     Record_Fb.update(last_accessed = datetime.utcnow()).where(fb_id == lead).execute()
-                    return
+                    sys.stderr.write("Updating: \n" + lead + "\n")
+                    sys.stderr.flush()
                 else:
                     return
             if protocol == "html":
@@ -152,9 +163,10 @@ def callback(ch, method, properties, body):
                     """
                     TODO: Handle elif difference
                     """
-                elif seen_html_time_ago(lead):
+                elif seen_linkedin_time_ago(lead):
                     Record_LinkedIn.update(last_accessed = datetime.utcnow()).where(url == lead).execute()
-                    return
+                    sys.stderr.write("Updating: \n" + lead + "\n")
+                    sys.stderr.flush()
                 else:
                     return
             fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}

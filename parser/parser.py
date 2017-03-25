@@ -92,7 +92,7 @@ def linkedIn_parse(url, datafrom_xpath):
             'follower_count': follower_count,
             'specialities': specialities,
             'country': country,
-            'url': url
+            'linkedin_resource_locator': url
         }
 
         for coy in alsoViewed:
@@ -101,7 +101,7 @@ def linkedIn_parse(url, datafrom_xpath):
     except:
         raise Exception("Unable to parse linkedIn body" + datafrom_xpath)
 
-def facebook_parse(facebook_company_info):
+def facebook_parse(fb_id, facebook_company_info):
     """
     Parameters:
     facebook_company_info: dict, from fetcher, using get_object function
@@ -136,7 +136,8 @@ def facebook_parse(facebook_company_info):
         'country': company_country,
         'address': company_postal,
         'contact_no': company_phone,
-        'industry': company_category
+        'industry': company_category,
+        'facebook_resource_locator': fb_id
     }
 
     return company_info, potential_leads       
@@ -167,7 +168,7 @@ def parseCallback(ch, method, properties, body):
             if contact == None:
                 return
         elif data["protocol"] == "fb":
-            contact, potential_leads = facebook_parse(data["raw_response"])
+            contact, potential_leads = facebook_parse(data["resource_locator"], data["raw_response"])
         store_egress_channel.basic_publish(
             exchange='',
             routing_key='store',
