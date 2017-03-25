@@ -172,7 +172,8 @@ def parseCallback(ch, method, properties, body):
             routing_key='store',
             body=json.dumps(contact),
             properties=pika.BasicProperties(
-                delivery_mode = 1
+                delivery_mode = 1,
+                priority=0 # default priority
             )
         )
         """
@@ -186,7 +187,8 @@ def parseCallback(ch, method, properties, body):
             routing_key='filter',
             body=json.dumps(leads_data),
             properties=pika.BasicProperties(
-                delivery_mode = 1
+                delivery_mode = 1,
+                priority=0 # default priority
             )
         )
     except Exception as e:

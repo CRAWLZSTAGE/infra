@@ -129,7 +129,8 @@ def callback(ch, method, properties, body):
                 routing_key='fetch',
                 body=json.dumps(fetch_data),
                 properties=pika.BasicProperties(
-                    delivery_mode = 1
+                    delivery_mode = 1,
+                    priority=0 # default priority
                 )
             )
     except Exception as e:
