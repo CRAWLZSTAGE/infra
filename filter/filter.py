@@ -42,6 +42,10 @@ class Record_fb(BaseModel):
     fb_id = CharField(primary_key=True)
     last_accessed = DateTimeField(default=datetime.utcnow())
 
+class Record_fsquare(BaseModel):
+    fsquare_id = CharField(primary_key=True)
+    last_accessed = DateTimeField(default=datetime.utcnow())    
+
 while True:
     try:
         print "attemption DB connection at ", DB_HOST
@@ -57,6 +61,9 @@ if not Record.table_exists():
 if not Record_fb.table_exists():
     Record_fb.create_table()
 
+if not Record_fsquare.table_exists():
+    Record_fsquare.create_table()
+
 while True:
     try:
         print "attempting pika connection at ", MQTT_HOST
@@ -71,6 +78,13 @@ ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='filter', durable=True)
 egress_channel = mqtt_connection.channel()
 egress_channel.queue_declare(queue='fetch', durable=True)
+
+def seen_fsquare(foursquare_id):
+    try:
+        Record_fsquare.select().where(Record_fsquare.fsquare_id == foursquare_id).get()
+        return True
+    except Exception:
+        return False
 
 def seen_fb(facebook_id):
     try:
@@ -119,6 +133,12 @@ def callback(ch, method, properties, body):
                 newRecord.save(force_insert=True)
             else:
                 return
+        if protocol == "fsquare":
+            if not seen_fsquare(lead):
+                newRecord = Record_fsquare(fsquare_id=lead)
+                newRecord.save(force_insert=True)
+            else:
+                return            
         fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
         egress_channel.basic_publish(
             exchange='',

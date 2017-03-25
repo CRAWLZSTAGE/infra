@@ -9,6 +9,7 @@ parser specific dependencies
 
 from lxml import html
 
+
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
@@ -102,6 +103,9 @@ def facebook_parse(facebook_company_info):
     Outputs:
     company_info: dict , information of the company
     other_companies_pages: array, each element containing an id and name
+
+    TO-DO:
+    company_postal and company_street should not both be under address
     """
 
     if facebook_company_info:
@@ -132,7 +136,48 @@ def facebook_parse(facebook_company_info):
         'industry': company_category
     }
 
-    return company_info, potential_leads       
+    return company_info, potential_leads      
+
+
+def foursquare_parse(foursquare_venue_info):
+    """
+    Parameters:
+    foursquare_venue_info: dict, from fetcher, using requests.get function
+
+    Outputs:
+    company_info: dict , information of the company
+    other_companies_pages: array, each element containing an id and name
+
+    TO-DO:
+    company_street and company_postal should not both be under address
+    """
+
+    if foursquare_venue_info:
+        company_name = foursquare_venue_info['name'] if ('name' in foursquare_venue_info) else ''
+        #company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else ''
+        company_phone = foursquare_venue_info['contact']['phone'] if (foursquare_venue_info.has_key("contact") and foursquare_venue_info["contact"].has_key("phone")) else ''
+        company_category = foursquare_venue_info['categories'][0]['name'] if (not(foursquare_venue_info['categories']) and foursquare_venue_info['categories'][0].has_key("name")) else ''
+        company_street = foursquare_venue_info["location"]['address'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("address")) else ''
+        company_country = foursquare_venue_info["location"]['country'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("country")) else ''
+        company_postal = foursquare_venue_info["location"]['postalCode'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("postalCode")) else ''
+
+    """
+    TODO
+    this section
+    """
+
+    company_info = {
+        'org_name': company_name,
+        #'description': company_about,
+        'address': company_street,
+        'country': company_country,
+        'address': company_postal,
+        'contact_no': company_phone,
+        'industry': company_category
+    }
+
+    return company_info   
+
 
 def callback(ch, method, properties, body):
     sys.stderr.write("Received Message \n" + body + "\n")
@@ -155,8 +200,16 @@ def callback(ch, method, properties, body):
         contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
         if contact == None:
             return
+
     elif data["protocol"] == "fb":
         contact, potential_leads = facebook_parse(data["raw_response"])
+
+    elif data["protocol"] == "fsquare":
+        potential_leads = data["potential_leads"]
+        contact = foursquare_parse(data["raw_response"])
+        if contact == None:
+            return
+
     store_egress_channel.basic_publish(
         exchange='',
         routing_key='store',

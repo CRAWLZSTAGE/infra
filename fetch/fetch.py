@@ -17,6 +17,8 @@ MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
+FOURSQUARE_CLIENT_ID = os.environ.get('FOURSQUARE_CLIENT_ID')
+FOURSQUARE_CLIENT_SECRET = os.environ.get('FOURSQUARE_CLIENT_SECRET')
 
 while True:
     try:
@@ -53,6 +55,21 @@ def facebook_fetch(facebook_id):
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
     return facebook_company_info
 
+foursquare_version = '20170101'
+
+def foursquare_fetch(foursquare_id):
+    foursquare_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
+    foursquare_response = requests.get(foursquare_url)  
+    foursquare_response_json = foursquare_response.json() 
+    return foursquare_response_json["response"]["venue"]
+
+def foursquare_fetch_nextvenues(foursquare_id):
+    nextvenues_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "/nextvenues?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
+    web_response = requests.get(nextvenues_url)
+    resp = web_response.json()
+    next_venue_ids = [venue["id"] for venue in resp["response"]["nextVenues"]["items"]]
+    return next_venue_ids if next_venue_ids else []    
+
 def callback(ch, method, properties, body):
     sys.stderr.write("Received Message \n" + body + "\n")
     # print("Method: {}".format(method))
@@ -74,11 +91,23 @@ def callback(ch, method, properties, body):
     if data["protocol"] == "http":
         html_response = linkedIn_fetch(data["resource_locator"])
         new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response}
+
     elif data["protocol"] == "fb":
         fb_response = facebook_fetch(data["resource_locator"])
         if fb_response == None:
             return
         new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response}
+
+    elif data["protocol"] == "fsquare":
+        fsquare_response = foursquare_fetch(data["resource_locator"])
+
+        # here we fetch the other ids of venue's nextvenues attribute
+        # TO-DO: find better way of traversing foursquare
+        fsquare_next_venues = foursquare_fetch_nextvenues(data["resource_locator"])
+        if fsquare_response == None:
+            return    
+        new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fsquare_response, "potential_leads": fsquare_next_venues} 
+           
     else:
         return
     
