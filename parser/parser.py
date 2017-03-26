@@ -2,6 +2,9 @@ import os, sys
 import pika
 import json
 import time
+import threading
+from Queue import Queue
+import traceback
 
 """
 parser specific dependencies
@@ -13,25 +16,29 @@ from lxml import html
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
-
-FACEBOOK_ACCESS_TOKEN = 'access token here'
+MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
 while True:
     try:
-        print "attempting connection"
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
     except Exception:
-        print "connection failed"
         time.sleep(5)
 
+pqdata = dict()
+pqdata['x-max-priority'] = 5
+
 ingress_channel = mqtt_connection.channel()
-ingress_channel.queue_declare(queue='parse', durable=True)
+ingress_channel.queue_declare(queue='parse', durable=True, arguments=pqdata)
 store_egress_channel = mqtt_connection.channel()
-store_egress_channel.queue_declare(queue='store', durable=True)
+store_egress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
 filter_egress_channel = mqtt_connection.channel()
-filter_egress_channel.queue_declare(queue='filter', durable=True)
+filter_egress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
+
+"""
+Parsers
+"""
 
 def linkedIn_parse(url, datafrom_xpath):
     """
@@ -85,17 +92,16 @@ def linkedIn_parse(url, datafrom_xpath):
             'follower_count': follower_count,
             'specialities': specialities,
             'country': country,
-            'url': url
+            'linkedin_resource_locator': url
         }
 
         for coy in alsoViewed:
             list_of_companies.append(coy["homeUrl"])
         return [ contact, list_of_companies ]
     except:
-        print "cant parse page", url
-        return [ None, None ]
+        raise Exception("Unable to parse linkedIn body" + datafrom_xpath)
 
-def facebook_parse(facebook_company_info):
+def facebook_parse(fb_id, facebook_company_info):
     """
     Parameters:
     facebook_company_info: dict, from fetcher, using get_object function
@@ -103,19 +109,26 @@ def facebook_parse(facebook_company_info):
     Outputs:
     company_info: dict , information of the company
     other_companies_pages: array, each element containing an id and name
+    , description, fan_count, hours, link
 
     TO-DO:
     company_postal and company_street should not both be under address
     """
 
     if facebook_company_info:
-        company_name = facebook_company_info['name'] if ('name' in facebook_company_info) else ''
-        company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else ''
-        company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else ''
-        company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else ''
-        company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else ''
-        company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else ''
-        company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else ''
+        company_name = facebook_company_info['name'] if ('name' in facebook_company_info) else None
+        company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else None
+        company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else None
+        company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else None
+        company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else None
+        company_longitude = facebook_company_info["location"]['longitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("longitude")) else None
+        company_latitude = facebook_company_info["location"]['latitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("latitude")) else None
+        company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else None
+        company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else None
+        company_fan_count = facebook_company_info['fan_count'] if ('fan_count' in facebook_company_info) else None
+        company_hours = facebook_company_info['hours'] if ('hours' in facebook_company_info) else None
+        company_link = facebook_company_info['link'] if ('link' in facebook_company_info) else None
+        company_intl_number_with_plus = facebook_company_info['intl_number_with_plus'] if ('intl_number_with_plus' in facebook_company_info) else None
 
     potential_leads = []
 
@@ -131,9 +144,16 @@ def facebook_parse(facebook_company_info):
         'description': company_about,
         'address': company_street,
         'country': company_country,
-        'address': company_postal,
+        'postal_code': company_postal,
         'contact_no': company_phone,
-        'industry': company_category
+        'industry': company_category,
+        'facebook_resource_locator': fb_id,
+        'longitude': company_longitude,
+        'latitude': company_latitude,
+        'fan_count': company_fan_count,
+        'hours': company_hours,
+        'link': company_link,
+        'intl_number_with_plus': company_intl_number_with_plus
     }
 
     return company_info, potential_leads      
@@ -179,54 +199,68 @@ def foursquare_parse(foursquare_venue_info):
     return company_info   
 
 
-def callback(ch, method, properties, body):
-    sys.stderr.write("Received Message \n" + body + "\n")
-    # print("Method: {}".format(method))
-    # print("Properties: {}".format(properties))
-    # print("Message: {}".format(body))
-    data = json.loads(body)
-    ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response"):
-        raise Exception
-        return
-    if data.has_key("raw_response") == None:
-        raise Exception
-        return
-    """
-    TODO
-    use appropriate parser according to URL
-    """
-    if data["protocol"] == "http":
-        contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
-        if contact == None:
+def parseCallback(ch, method, properties, body):
+    try:
+        global MAX_DEPTH
+        
+        data = json.loads(body)
+        if data.has_key("maxDepth") and type(data["maxDepth"]) == int:
+            MAX_DEPTH = int(data["maxDepth"])
+ 
             return
+        if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response") or not data.has_key("depth"):
+            raise Exception("Body malformed")
+        if data.has_key("raw_response") == None:
+            raise Exception("None Message Recieved")
+        """
+        TODO
+        use appropriate parser according to URL
+        """
+        if data["protocol"] == "linkedin":
+            contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
+            if contact == None:
+                return
 
-    elif data["protocol"] == "fb":
-        contact, potential_leads = facebook_parse(data["raw_response"])
+        elif data["protocol"] == "fb":
+            contact, potential_leads = facebook_parse(data["resource_locator"], data["raw_response"])
 
-    elif data["protocol"] == "fsquare":
-        potential_leads = data["potential_leads"]
-        contact = foursquare_parse(data["raw_response"])
-        if contact == None:
+        elif data["protocol"] == "fsquare":
+            potential_leads = data["potential_leads"]
+            contact = foursquare_parse(data["raw_response"])
+            if contact == None:
+                return
+
+        contact["protocol"] = data["protocol"]
+        store_egress_channel.basic_publish(
+            exchange='',
+            routing_key='store',
+            body=json.dumps(contact),
+            properties=pika.BasicProperties(
+                delivery_mode = 1
+                priority=0 #default priority
+            )
+        )
+        """
+        Recurse further if depth is not reached yet
+        """
+        if data["depth"] >= MAX_DEPTH:
             return
-
-    store_egress_channel.basic_publish(
-        exchange='',
-        routing_key='store',
-        body=json.dumps(contact),
-        properties=pika.BasicProperties(
-            delivery_mode = 1
+        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
+        filter_egress_channel.basic_publish(
+            exchange='',
+            routing_key='filter',
+            body=json.dumps(leads_data),
+            properties=pika.BasicProperties(
+                delivery_mode = 1
+                priority=0 # default priority
+            )
         )
-    )
-    leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
-    filter_egress_channel.basic_publish(
-        exchange='',
-        routing_key='filter',
-        body=json.dumps(leads_data),
-        properties=pika.BasicProperties(
-            delivery_mode = 1
-        )
-    )
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        traceback.print_exc()
+        sys.stderr.flush()
+    finally:
+        ingress_channel_parse.basic_ack(delivery_tag = method.delivery_tag)    
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='parse')
