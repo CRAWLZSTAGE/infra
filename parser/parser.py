@@ -243,7 +243,7 @@ def parseCallback(ch, method, properties, body):
             body=json.dumps(contact),
             properties=pika.BasicProperties(
                 delivery_mode = 1
-                priority=0 #default priority
+                priority= 0 #default priority
             )
         )
         """
@@ -258,7 +258,7 @@ def parseCallback(ch, method, properties, body):
             body=json.dumps(leads_data),
             properties=pika.BasicProperties(
                 delivery_mode = 1
-                priority=0 # default priority
+                priority = 0 # default priority
             )
         )
     except Exception as e:

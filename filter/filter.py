@@ -114,10 +114,12 @@ def seen_website(website):
     except Exception:
         return False
 
+def retrieve_Fsquare(foursquare_id):
+    return Record_Fsquare.select().where(Record_Fsquare.fsquare_id == foursquare_id).get()
 
 def seen_fsquare(foursquare_id):
     try:
-        Record_fsquare.select().where(Record_fsquare.fsquare_id == foursquare_id).get()
+        retrieve_Fsquare(foursquare_id)
         return True
     except Exception:
         return False
@@ -135,6 +137,11 @@ def seen_linkedin_time_ago(lead):
     if (datetime.utcnow() - retrieve_LinkedIn(lead).last_accessed).seconds > RECORD_TIMEOUT:
         return True
     return False
+
+def seen_fsquare_time_ago(lead):
+    if (datetime.utcnow() - retrieve_Fsquare(lead).last_accessed).seconds > RECORD_TIMEOUT:
+        return True
+    return False        
 
 def callback(ch, method, properties, body):
     try:
@@ -154,9 +161,16 @@ def callback(ch, method, properties, body):
                     if seen_website(raw_data["resource_locator"]):
                         retrieve_LinkedIn(raw_data["resource_locator"]).delete_instance()
                     return
+
+                if raw_data["protocol"] == "fsquare":
+                    if seen_fsquare(raw_data["resource_locator"]):
+                        retrieve_Fsquare(raw_data["resource_locator"]).delete_instance()
+                    return
+                            
                 raise Exception("Unknown protocol requested during deletion")
             else:
-                raise Exception("Body malformed")    
+                raise Exception("Body malformed") 
+
         potential_leads = raw_data["potential_leads"]
         protocol = raw_data["protocol"]
 
@@ -189,10 +203,14 @@ def callback(ch, method, properties, body):
                     return
             if protocol == "fsquare":
                 if not seen_fsquare(lead):
-                    newRecord = Record_fsquare(fsquare_id=lead)
+                    newRecord = Record_Fsquare(fsquare_id=lead, last_accessed= datetime.utcnow())
                     newRecord.save(force_insert=True)
+                elif seen_fsquare_time_ago(lead):
+                    Record_Fsquare.update(last_accessed = datetime.utcnow()).where(fsquare_id == lead).execute()
+                    sys.stderr.write("Updating: \n" + lead + "\n")
+                    sys.stderr.flush()
                 else:
-                    return            
+                    return  
             fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
             egress_channel.basic_publish(
                 exchange='',
