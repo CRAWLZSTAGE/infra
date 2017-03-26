@@ -201,9 +201,6 @@ def callback(ch, method, properties, body):
                 try:
                     newContact.save(force_insert=True)
                 except Exception, e:
-                    """
-                    Collide, should not happen!
-                    """
                     sys.stderr.write("Collision occured: " + str(e)) 
                     psql_db.rollback()
             updateLinkedInContact(data)
@@ -213,7 +210,6 @@ def callback(ch, method, properties, body):
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='store')

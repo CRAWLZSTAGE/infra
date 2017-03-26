@@ -31,11 +31,6 @@ store_egress_channel.queue_declare(queue='store', durable=True, arguments=pqdata
 filter_egress_channel = mqtt_connection.channel()
 filter_egress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
 
-
-"""
-Parsers
-"""
-
 def linkedIn_parse(url, datafrom_xpath):
     """
     TODO

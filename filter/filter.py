@@ -7,10 +7,6 @@ import traceback
 from peewee import *
 from datetime import datetime
 
-"""
-Environment Variables
-"""
-
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')

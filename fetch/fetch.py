@@ -4,12 +4,7 @@ import json
 import time
 import traceback
 
-"""
-fetch specific dependencies
-"""
-
 import requests
-from time import sleep
 from lxml import html
 import facebook
 
