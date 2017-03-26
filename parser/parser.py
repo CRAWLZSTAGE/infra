@@ -5,6 +5,10 @@ import time
 import threading
 from Queue import Queue
 import traceback
+<<<<<<< HEAD
+=======
+
+>>>>>>> refactor-errors
 
 """
 parser specific dependencies
@@ -17,6 +21,13 @@ MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
+<<<<<<< HEAD
+=======
+
+"""
+RabbitMQ support courtesy of Pika
+"""
+>>>>>>> refactor-errors
 
 while True:
     try:
@@ -29,13 +40,22 @@ while True:
 pqdata = dict()
 pqdata['x-max-priority'] = 5
 
+<<<<<<< HEAD
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='parse', durable=True, arguments=pqdata)
+=======
+ingress_channel_parse = mqtt_connection.channel()
+ingress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
+>>>>>>> refactor-errors
 store_egress_channel = mqtt_connection.channel()
 store_egress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
 filter_egress_channel = mqtt_connection.channel()
 filter_egress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> refactor-errors
 """
 Parsers
 """
@@ -110,9 +130,12 @@ def facebook_parse(fb_id, facebook_company_info):
     company_info: dict , information of the company
     other_companies_pages: array, each element containing an id and name
     , description, fan_count, hours, link
+<<<<<<< HEAD
 
     TO-DO:
     company_postal and company_street should not both be under address
+=======
+>>>>>>> refactor-errors
     """
 
     if facebook_company_info:
@@ -129,6 +152,10 @@ def facebook_parse(fb_id, facebook_company_info):
         company_hours = facebook_company_info['hours'] if ('hours' in facebook_company_info) else None
         company_link = facebook_company_info['link'] if ('link' in facebook_company_info) else None
         company_intl_number_with_plus = facebook_company_info['intl_number_with_plus'] if ('intl_number_with_plus' in facebook_company_info) else None
+<<<<<<< HEAD
+=======
+        
+>>>>>>> refactor-errors
 
     potential_leads = []
 
@@ -154,6 +181,7 @@ def facebook_parse(fb_id, facebook_company_info):
         'hours': company_hours,
         'link': company_link,
         'intl_number_with_plus': company_intl_number_with_plus
+<<<<<<< HEAD
     }
 
     return company_info, potential_leads      
@@ -265,11 +293,76 @@ def parseCallback(ch, method, properties, body):
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='parse')
 ingress_channel.start_consuming()
+=======
+
+    }
+
+    return company_info, potential_leads       
+
+>>>>>>> refactor-errors
+
+"""
+Message Handling
+"""
 
 
+def parseCallback(ch, method, properties, body):
+    try:
+        global MAX_DEPTH
+        data = json.loads(body)
+        if data.has_key("maxDepth") and type(data["maxDepth"]) == int:
+            MAX_DEPTH = int(data["maxDepth"])
+            return
+        if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response") or not data.has_key("depth"):
+            raise Exception("Body malformed")
+        if data.has_key("raw_response") == None:
+            raise Exception("None Message Recieved")
+        """
+        TODO
+        use appropriate parser according to URL
+        """
+        if data["protocol"] == "linkedin":
+            contact, potential_leads = linkedIn_parse(data["resource_locator"], data["raw_response"])
+            if contact == None:
+                return
+        elif data["protocol"] == "fb":
+            contact, potential_leads = facebook_parse(data["resource_locator"], data["raw_response"])
+        contact["protocol"] = data["protocol"]
+        store_egress_channel.basic_publish(
+            exchange='',
+            routing_key='store',
+            body=json.dumps(contact),
+            properties=pika.BasicProperties(
+                delivery_mode = 1,
+                priority=0 # default priority
+            )
+        )
+        """
+        Recurse further if depth is not reached yet
+        """
+        if data["depth"] >= MAX_DEPTH:
+            return
+        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"], "depth": data["depth"] + 1}
+        filter_egress_channel.basic_publish(
+            exchange='',
+            routing_key='filter',
+            body=json.dumps(leads_data),
+            properties=pika.BasicProperties(
+                delivery_mode = 1,
+                priority=0 # default priority
+            )
+        )
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        traceback.print_exc()
+        sys.stderr.flush()
+    finally:
+        ingress_channel_parse.basic_ack(delivery_tag = method.delivery_tag)
 
 
-
+ingress_channel_parse.basic_qos(prefetch_count=1)
+ingress_channel_parse.basic_consume(parseCallback, queue='parse')
+ingress_channel_parse.start_consuming()
 
 
 

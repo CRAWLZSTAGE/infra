@@ -28,6 +28,32 @@ FACEBOOK_ACCESS_TOKEN=******
 ## https://developers.facebook.com/tools/accesstoken/
 
 
+
+
+docker exec -i -t  infra_parser_1 /bin/bash
+```
+
+# Test Cases
+
+## Facebook
+
+```
+{"maxDepth": 1}
+{"potential_leads": ["1443823632507167"], "protocol": "fb", "depth": 1}
+{"maxDepth": 2}
+{"potential_leads": ["420608754800233"], "protocol": "fb", "depth": 1}
+{"maxDepth": 3}
+{"potential_leads": ["10084673031"], "protocol": "fb", "depth": 1}
+{"maxDepth": 1}
+{"potential_leads": ["113901278620393"], "protocol": "fb", "depth": 1}
+{"maxDepth": 3}
+{"potential_leads": ["104958162837"], "protocol": "fb", "depth": 1}
+{"potential_leads": ["128737643875635"], "protocol": "fb", "depth": 1}
+```
+
+##LinkedIn
+
+```
 ```
 
 

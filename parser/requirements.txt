@@ -1,3 +1,4 @@
 pika>=0.10.0
 lxml>=3.6.4
 bpython>=0.16
+flask>=0.12

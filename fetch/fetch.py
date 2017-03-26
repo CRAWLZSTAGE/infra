@@ -41,7 +41,7 @@ while True:
         time.sleep(5)
 
 pqdata = dict()
-pqdata['x-max-priority'] = 5        
+pqdata['x-max-priority'] = 5
 
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='fetch', durable=True, arguments=pqdata)
@@ -99,6 +99,7 @@ def foursquare_fetch_nextvenues(foursquare_id):
 """
 Message handling
 """
+
 def deleteNode(data):
     new_body = {"delete": True, "resource_locator": data["resource_locator"], "protocol": data["protocol"]}
     egress_channel_filter.basic_publish(

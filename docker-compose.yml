@@ -1,4 +1,4 @@
-version: "2"
+version: "3"
 
 services:
   db:
@@ -18,27 +18,21 @@ services:
     depends_on:
       - mqtt
     env_file: _deployment/fetch.env
-  fetch2:
-    build: ./fetch
-    links:
-      - mqtt
-    depends_on:
-      - mqtt
-    env_file: _deployment/fetch.env
-  fetch3:
-    build: ./fetch
-    links:
-      - mqtt
-    depends_on:
-      - mqtt
-    env_file: _deployment/fetch.env
-  fetch4:
-    build: ./fetch
-    links:
-      - mqtt
-    depends_on:
-      - mqtt
-    env_file: _deployment/fetch.env
+    deploy:
+      replicas: 10
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+      placement:
+        constraints: [node.role == worker, engine.labels.db == true]
   parser:
     build: ./parser
     links:

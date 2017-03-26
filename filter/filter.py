@@ -22,7 +22,7 @@ DB_HOST = os.environ.get('DB_HOST')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
 DB_NAME = os.environ.get('DB_NAME')
-RECORD_TIMEOUT = os.environ.get('RECORD_TIMEOUT')
+RECORD_TIMEOUT = os.environ.get('RECORD_TIMEOUT') 
 """In Seconds"""
 
 
@@ -66,6 +66,10 @@ if not Record_Fb.table_exists():
 if not Record_Fsquare.table_exists():
     Record_Fsquare.create_table()
 
+"""
+RabbitMQ support courtesy of Pika
+"""
+
 while True:
     try:
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
@@ -76,7 +80,7 @@ while True:
         time.sleep(5)
 
 pqdata = dict()
-pqdata['x-max-priority'] = 5        
+pqdata['x-max-priority'] = 5
 
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
@@ -121,20 +125,18 @@ def seen_fsquare(foursquare_id):
 """
 Message Handling
 """
- 
+
 def seen_fb_time_ago(lead):
     if (datetime.utcnow() - retrieve_Fb(lead).last_accessed).seconds > RECORD_TIMEOUT:
         return True
     return False
- 
+
 def seen_linkedin_time_ago(lead):
     if (datetime.utcnow() - retrieve_LinkedIn(lead).last_accessed).seconds > RECORD_TIMEOUT:
         return True
-    return False:
-        return False
+    return False
 
 def callback(ch, method, properties, body):
-
     try:
         raw_data = json.loads(body)
         if (not raw_data.has_key("potential_leads") or not raw_data.has_key("protocol") or not raw_data.has_key("depth")):
@@ -197,7 +199,7 @@ def callback(ch, method, properties, body):
                 routing_key='fetch',
                 body=json.dumps(fetch_data),
                 properties=pika.BasicProperties(
-                    delivery_mode = 1
+                    delivery_mode = 1,
                     priority=0 # default priority
                 )
             )
@@ -206,8 +208,9 @@ def callback(ch, method, properties, body):
         traceback.print_exc()
         sys.stderr.flush()
     finally:
-        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)            
-                    
+        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+
+
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='filter')
 ingress_channel.start_consuming()
