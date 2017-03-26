@@ -8,8 +8,6 @@ import traceback
 parser specific dependencies
 """
 
-from lxml import html
-
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
@@ -37,6 +35,10 @@ store_egress_channel = mqtt_connection.channel()
 store_egress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
 filter_egress_channel = mqtt_connection.channel()
 filter_egress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
+
+"""
+Parsers
+"""
 
 def linkedIn_parse(url, datafrom_xpath):
     """
@@ -187,11 +189,11 @@ def foursquare_parse(foursquare_venue_info):
     """
 
     company_info = {
+        'foursquare_resource_locator':foursquare_venue_info['id'],
         'org_name': company_name,
-        #'description': company_about,
         'address': company_street,
         'country': company_country,
-        'address': company_postal,
+        'postal_code': company_postal,
         'contact_no': company_phone,
         'industry': company_category
     }
@@ -236,7 +238,7 @@ def parseCallback(ch, method, properties, body):
             routing_key='store',
             body=json.dumps(contact),
             properties=pika.BasicProperties(
-                delivery_mode = 1
+                delivery_mode = 1,
                 priority= 0 #default priority
             )
         )
@@ -245,13 +247,13 @@ def parseCallback(ch, method, properties, body):
         """
         if data["depth"] >= MAX_DEPTH:
             return
-        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"]}
+        leads_data = {"potential_leads": potential_leads, "protocol": data["protocol"], "depth": data["depth"] + 1}
         filter_egress_channel.basic_publish(
             exchange='',
             routing_key='filter',
             body=json.dumps(leads_data),
             properties=pika.BasicProperties(
-                delivery_mode = 1
+                delivery_mode = 1,
                 priority = 0 # default priority
             )
         )
@@ -262,8 +264,8 @@ def parseCallback(ch, method, properties, body):
     finally:
         ingress_channel_parse.basic_ack(delivery_tag = method.delivery_tag)    
 
-ingress_channel.basic_qos(prefetch_count=1)
-ingress_channel.basic_consume(callback, queue='parse')
-ingress_channel.start_consuming()
+ingress_channel_parse.basic_qos(prefetch_count=1)
+ingress_channel_parse.basic_consume(parseCallback, queue='parse')
+ingress_channel_parse.start_consuming()
 
 

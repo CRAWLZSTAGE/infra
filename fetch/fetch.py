@@ -3,8 +3,12 @@ import pika
 import json
 import time
 import traceback
+"""
+fetch specific dependencies
+"""
 
 import requests
+from time import sleep
 from lxml import html
 import facebook
 
@@ -159,6 +163,7 @@ def callback(ch, method, properties, body):
                 if fsquare_response == None:
                     raise Exception("Unable to find foursquare id: " + str(data["resource_locator"]))
                 fsquare_next_venues = foursquare_fetch_nextvenues(data["resource_locator"])
+                if fsquare_next_venues == None:
                     raise Exception("Unable to find next venues of foursquare id: " + str(data["resource_locator"]))
                 new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fsquare_response, "depth": data["depth"], "potential_leads": fsquare_next_venues} 
             except Exception as e:

@@ -203,7 +203,7 @@ def callback(ch, method, properties, body):
                     sys.stderr.flush()
                 else:
                     return  
-            fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead}
+            fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}
             egress_channel.basic_publish(
                 exchange='',
                 routing_key='fetch',
