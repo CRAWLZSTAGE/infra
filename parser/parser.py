@@ -109,6 +109,7 @@ def facebook_parse(fb_id, facebook_company_info):
     Outputs:
     company_info: dict , information of the company
     other_companies_pages: array, each element containing an id and name
+    , description, fan_count, hours, link
     """
 
     if facebook_company_info:
@@ -117,8 +118,13 @@ def facebook_parse(fb_id, facebook_company_info):
         company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else None
         company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else None
         company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else None
+        company_street = facebook_company_info["location"]['longitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("longitude")) else None
+        company_street = facebook_company_info["location"]['latitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("latitude")) else None
         company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else None
         company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else None
+        company_category = facebook_company_info['fan_count'] if ('fan_count' in facebook_company_info) else None
+        company_category = facebook_company_info['hours'] if ('hours' in facebook_company_info) else None
+        company_category = facebook_company_info['link'] if ('link' in facebook_company_info) else None
 
     potential_leads = []
 
@@ -134,7 +140,7 @@ def facebook_parse(fb_id, facebook_company_info):
         'description': company_about,
         'address': company_street,
         'country': company_country,
-        'address': company_postal,
+        'postal_code': company_postal,
         'contact_no': company_phone,
         'industry': company_category,
         'facebook_resource_locator': fb_id
@@ -169,6 +175,7 @@ def parseCallback(ch, method, properties, body):
                 return
         elif data["protocol"] == "fb":
             contact, potential_leads = facebook_parse(data["resource_locator"], data["raw_response"])
+        contact["protocol"] = data["protocol"]
         store_egress_channel.basic_publish(
             exchange='',
             routing_key='store',

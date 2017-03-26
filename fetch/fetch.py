@@ -62,7 +62,12 @@ def linkedIn_fetch(url):
 graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
 
 def facebook_fetch(facebook_id):
-    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category')
+    """
+    https://developers.facebook.com/docs/graph-api/reference/page
+    """
+    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category, description, fan_count, hours, link')
+    sys.stderr.write("FB Object: \n" + str(facebook_company_info) + "\n")
+    sys.stderr.flush()
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
     return facebook_company_info
 
