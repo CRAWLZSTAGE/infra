@@ -4,10 +4,6 @@ import json
 import time
 import traceback
 
-"""
-filter specific dependencies
-"""
-
 from peewee import *
 from datetime import datetime
 
@@ -22,7 +18,7 @@ DB_HOST = os.environ.get('DB_HOST')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
 DB_NAME = os.environ.get('DB_NAME')
-RECORD_TIMEOUT = os.environ.get('RECORD_TIMEOUT') 
+RECORD_TIMEOUT = os.environ.get('RECORD_TIMEOUT')
 """In Seconds"""
 
 

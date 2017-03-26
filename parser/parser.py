@@ -2,16 +2,7 @@ import os, sys
 import pika
 import json
 import time
-import threading
-from Queue import Queue
 import traceback
-
-
-"""
-parser specific dependencies
-"""
-
-from lxml import html
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
@@ -97,7 +88,9 @@ def linkedIn_parse(url, datafrom_xpath):
             'follower_count': follower_count,
             'specialities': specialities,
             'country': country,
-            'linkedin_resource_locator': url
+            'linkedin_resource_locator': url,
+            'year_founded': year_founded,
+            'size': size
         }
 
         for coy in alsoViewed:
@@ -131,7 +124,6 @@ def facebook_parse(fb_id, facebook_company_info):
         company_hours = facebook_company_info['hours'] if ('hours' in facebook_company_info) else None
         company_link = facebook_company_info['link'] if ('link' in facebook_company_info) else None
         company_intl_number_with_plus = facebook_company_info['intl_number_with_plus'] if ('intl_number_with_plus' in facebook_company_info) else None
-        
 
     potential_leads = []
 
@@ -160,7 +152,7 @@ def facebook_parse(fb_id, facebook_company_info):
 
     }
 
-    return company_info, potential_leads       
+    return company_info, potential_leads
 
 
 """
@@ -172,7 +164,7 @@ def parseCallback(ch, method, properties, body):
     try:
         global MAX_DEPTH
         data = json.loads(body)
-        if data.has_key("maxDepth") and type(data["maxDepth"]) == int:
+        if data.has_key("maxDepth") and isinstance(data["maxDepth"], int):
             MAX_DEPTH = int(data["maxDepth"])
             return
         if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("raw_response") or not data.has_key("depth"):

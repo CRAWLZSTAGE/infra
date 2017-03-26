@@ -10,7 +10,6 @@ fetch specific dependencies
 
 import requests
 from time import sleep
-from exceptions import ValueError
 from lxml import html
 import facebook
 
@@ -53,7 +52,7 @@ Fetchers
 """
 
 def linkedIn_fetch(url):
-    for i in range(5):
+    for _ in range(5):
         headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.90 Safari/537.36'}
         response = requests.get(url, headers=headers)
         formatted_response = response.content.replace('<!--', '').replace('-->', '')
@@ -103,7 +102,7 @@ def callback(ch, method, properties, body):
         Handle max depth
         """
         global MAX_DEPTH
-        if data.has_key("maxDepth") and type(data["maxDepth"]) == int:
+        if data.has_key("maxDepth") and isinstance(data["maxDepth"], int):
             MAX_DEPTH = int(data["maxDepth"])
             return
         """
@@ -118,7 +117,6 @@ def callback(ch, method, properties, body):
         """
         if data["depth"] >= MAX_DEPTH:
             deleteNode(data)
-            """raise Exception("Deleted Node: " + data["protocol"] + ": " + data["resource_locator"])"""
             return
         """
         Fetch Data
@@ -164,8 +162,6 @@ def callback(ch, method, properties, body):
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    
-    
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='fetch')
