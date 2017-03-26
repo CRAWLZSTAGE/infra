@@ -2,6 +2,7 @@ import os, sys
 import pika
 import json
 import time
+import traceback
 
 """
 fetch specific dependencies
@@ -37,12 +38,15 @@ while True:
     except Exception:
         time.sleep(5)
 
+pqdata = dict()
+pqdata['x-max-priority'] = 5
+
 ingress_channel = mqtt_connection.channel()
-ingress_channel.queue_declare(queue='fetch', durable=True)
+ingress_channel.queue_declare(queue='fetch', durable=True, arguments=pqdata)
 egress_channel_parse = mqtt_connection.channel()
-egress_channel_parse.queue_declare(queue='parse', durable=True)
+egress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
 egress_channel_filter = mqtt_connection.channel()
-egress_channel_filter.queue_declare(queue='filter', durable=True)
+egress_channel_filter.queue_declare(queue='filter', durable=True, arguments=pqdata)
 
 """
 Fetchers
@@ -65,9 +69,13 @@ def facebook_fetch(facebook_id):
     """
     https://developers.facebook.com/docs/graph-api/reference/page
     """
-    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category, description, fan_count, hours, link')
-    sys.stderr.write("FB Object: \n" + str(facebook_company_info) + "\n")
-    sys.stderr.flush()
+    facebook_company_info = graph.get_object(id=facebook_id, fields='name, about, location, phone, category, description, fan_count, hours, link, call_to_actions')
+    if facebook_company_info.has_key("call_to_actions") and facebook_company_info["call_to_actions"].has_key("data"):
+        for obj in facebook_company_info["call_to_actions"]["data"]:
+            if obj.has_key("type") and obj["type"] == "CALL_NOW":
+                facebook_call_now = graph.get_object(id=obj["id"], fields='from,id,intl_number_with_plus,status,type')
+                if facebook_call_now.has_key("intl_number_with_plus"):
+                    facebook_company_info["intl_number_with_plus"] = facebook_call_now["intl_number_with_plus"]
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
     return facebook_company_info
 
@@ -122,6 +130,7 @@ def callback(ch, method, properties, body):
                     raise Exception("Unable to find LinkedIn data: " + str(data["resource_locator"]))
                 new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": html_response, "depth": data["depth"]}
             except Exception as e:
+                traceback.print_exc()
                 deleteNode(data)
                 raise e
         elif data["protocol"] == "fb":
@@ -131,6 +140,7 @@ def callback(ch, method, properties, body):
                     raise Exception("Unable to find facebook id: " + str(data["resource_locator"]))
                 new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fb_response, "depth": data["depth"]}
             except Exception as e:
+                traceback.print_exc()
                 deleteNode(data)
                 raise e
         else:
@@ -150,6 +160,7 @@ def callback(ch, method, properties, body):
         )
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to fetch: \n" + body + "\n")
+        traceback.print_exc()
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)

@@ -2,6 +2,7 @@ import os, sys, socket
 import pika
 import json
 import time
+import traceback
 
 """
 store specific dependencies
@@ -32,6 +33,7 @@ class BaseModel(Model):
     class Meta:
         database = psql_db
 
+
 class FacebookContact(BaseModel):
     facebook_resource_locator = TextField(primary_key=True)
     org_name = CharField(null = True)
@@ -45,6 +47,9 @@ class FacebookContact(BaseModel):
     fan_count = IntegerField(null = True)
     hours = TextField(null = True)
     link = TextField(null = True)
+    longitude = TextField(null = True)
+    latitude = TextField(null = True)
+    intl_number_with_plus = TextField(null = True)
 
 class LinkedInContact(BaseModel):
     linkedin_resource_locator = TextField(primary_key = True)
@@ -112,8 +117,11 @@ while True:
     except Exception:
         time.sleep(5)
 
+pqdata = dict()
+pqdata['x-max-priority'] = 5
+
 ingress_channel = mqtt_connection.channel()
-ingress_channel.queue_declare(queue='store', durable=True)
+ingress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
 
 
 """
@@ -146,6 +154,12 @@ def updateFacebookContact(data):
         FacebookContact.update(hours = data["hours"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("link") and data["link"] != None:
         FacebookContact.update(link = data["link"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
+    if data.has_key("longitude") and data["longitude"] != None:
+        FacebookContact.update(longitude = data["longitude"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
+    if data.has_key("latitude") and data["latitude"] != None:
+        FacebookContact.update(latitude = data["latitude"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
+    if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
+        FacebookContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     return
 
 def updateLinkedInContact(data):
@@ -250,6 +264,7 @@ def callback(ch, method, properties, body):
             updateLinkedInContact(data)
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        traceback.print_exc()
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)

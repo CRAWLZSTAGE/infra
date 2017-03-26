@@ -4,6 +4,8 @@ import json
 import time
 import threading
 from Queue import Queue
+import traceback
+
 
 """
 parser specific dependencies
@@ -28,12 +30,15 @@ while True:
     except Exception:
         time.sleep(5)
 
+pqdata = dict()
+pqdata['x-max-priority'] = 5
+
 ingress_channel_parse = mqtt_connection.channel()
-ingress_channel_parse.queue_declare(queue='parse', durable=True)
+ingress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
 store_egress_channel = mqtt_connection.channel()
-store_egress_channel.queue_declare(queue='store', durable=True)
+store_egress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
 filter_egress_channel = mqtt_connection.channel()
-filter_egress_channel.queue_declare(queue='filter', durable=True)
+filter_egress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
 
 
 """
@@ -118,13 +123,15 @@ def facebook_parse(fb_id, facebook_company_info):
         company_phone = facebook_company_info['phone'] if ('phone' in facebook_company_info) else None
         company_category = facebook_company_info['category'] if ('category' in facebook_company_info) else None
         company_street = facebook_company_info["location"]['street'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("street")) else None
-        company_street = facebook_company_info["location"]['longitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("longitude")) else None
-        company_street = facebook_company_info["location"]['latitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("latitude")) else None
+        company_longitude = facebook_company_info["location"]['longitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("longitude")) else None
+        company_latitude = facebook_company_info["location"]['latitude'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("latitude")) else None
         company_country = facebook_company_info["location"]['country'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("country")) else None
         company_postal = facebook_company_info["location"]['zip'] if (facebook_company_info.has_key("location") and facebook_company_info["location"].has_key("zip")) else None
-        company_category = facebook_company_info['fan_count'] if ('fan_count' in facebook_company_info) else None
-        company_category = facebook_company_info['hours'] if ('hours' in facebook_company_info) else None
-        company_category = facebook_company_info['link'] if ('link' in facebook_company_info) else None
+        company_fan_count = facebook_company_info['fan_count'] if ('fan_count' in facebook_company_info) else None
+        company_hours = facebook_company_info['hours'] if ('hours' in facebook_company_info) else None
+        company_link = facebook_company_info['link'] if ('link' in facebook_company_info) else None
+        company_intl_number_with_plus = facebook_company_info['intl_number_with_plus'] if ('intl_number_with_plus' in facebook_company_info) else None
+        
 
     potential_leads = []
 
@@ -143,7 +150,14 @@ def facebook_parse(fb_id, facebook_company_info):
         'postal_code': company_postal,
         'contact_no': company_phone,
         'industry': company_category,
-        'facebook_resource_locator': fb_id
+        'facebook_resource_locator': fb_id,
+        'longitude': company_longitude,
+        'latitude': company_latitude,
+        'fan_count': company_fan_count,
+        'hours': company_hours,
+        'link': company_link,
+        'intl_number_with_plus': company_intl_number_with_plus
+
     }
 
     return company_info, potential_leads       
@@ -202,6 +216,7 @@ def parseCallback(ch, method, properties, body):
         )
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        traceback.print_exc()
         sys.stderr.flush()
     finally:
         ingress_channel_parse.basic_ack(delivery_tag = method.delivery_tag)

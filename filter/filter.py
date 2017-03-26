@@ -2,6 +2,7 @@ import os, sys
 import pika
 import json
 import time
+import traceback
 
 """
 filter specific dependencies
@@ -73,10 +74,13 @@ while True:
         print "connection failed"
         time.sleep(5)
 
+pqdata = dict()
+pqdata['x-max-priority'] = 5
+
 ingress_channel = mqtt_connection.channel()
-ingress_channel.queue_declare(queue='filter', durable=True)
+ingress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
 egress_channel = mqtt_connection.channel()
-egress_channel.queue_declare(queue='fetch', durable=True)
+egress_channel.queue_declare(queue='fetch', durable=True, arguments=pqdata)
 
 
 """
@@ -181,6 +185,7 @@ def callback(ch, method, properties, body):
             )
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to filter: \n" + body + "\n")
+        traceback.print_exc()
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
