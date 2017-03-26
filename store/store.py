@@ -1,12 +1,8 @@
-import os, sys, socket
+import os, sys
 import pika
 import json
 import time
 import traceback
-
-"""
-store specific dependencies
-"""
 
 from peewee import *
 
@@ -64,25 +60,8 @@ class LinkedInContact(BaseModel):
     industry = CharField(null = True)
     specialities = TextField(null = True)
     follower_count = IntegerField(null = True)
-    
-"""
-class Contact(BaseModel):
-    org_name = CharField(primary_key=True)
-    org_type = CharField(null = True)
-    description = TextField(null = True)
-    address = TextField(null = True)
-    city = CharField(null = True)
-    state = CharField(null = True)
-    postal_code = IntegerField(default=0, null = True)
-    contact_no = CharField(null = True)
-    fax_no = CharField(null = True)
-    email_address = TextField(null = True)
-    website = TextField(null = True)
-    industry = CharField(null = True)
-    follower_count = IntegerField(default=0, null = True)
-    linkedin_resource_locator = TextField(null = True)
-    facebook_resource_locator = TextField(null = True)
-"""
+    year_founded = TextField(null = True)
+    size = TextField(null = True)
 
 while True:
     try:
@@ -90,11 +69,6 @@ while True:
         break
     except Exception:
         time.sleep(5)
-
-"""
-if not Contact.table_exists():
-    Contact.create_table()
-"""
 
 if not FacebookContact.table_exists():
     FacebookContact.create_table()
@@ -142,13 +116,13 @@ def updateFacebookContact(data):
         FacebookContact.update(country = data["country"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("state") and data["state"] != None:
         FacebookContact.update(state = data["state"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("postal_code") and type(data["postal_code"]) == int and data["postal_code"] != None:
+    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
         FacebookContact.update(postal_code = data["postal_code"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("contact_no") and data["contact_no"] != None:
         FacebookContact.update(contact_no = data["contact_no"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("industry") and data["industry"] != None:
         FacebookContact.update(industry = data["industry"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("fan_count") and type(data["fan_count"]) == int and data["fan_count"] != None:
+    if data.has_key("fan_count") and isinstance(data["fan_count"], int) and data["fan_count"] != None:
         FacebookContact.update(fan_count = data["fan_count"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("hours") and data["hours"] != None:
         FacebookContact.update(hours = data["hours"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
@@ -175,7 +149,7 @@ def updateLinkedInContact(data):
         LinkedInContact.update(city = data["city"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     if data.has_key("state") and data["state"] != None:
         LinkedInContact.update(state = data["state"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("postal_code") and type(data["postal_code"]) == int and data["postal_code"] != None:
+    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
         LinkedInContact.update(postal_code = data["postal_code"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     if data.has_key("website") and data["website"] != None:
         LinkedInContact.update(website = data["website"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
@@ -183,40 +157,13 @@ def updateLinkedInContact(data):
         LinkedInContact.update(industry = data["industry"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     if data.has_key("specialities") and data["specialities"] != None:
         LinkedInContact.update(specialities = data["specialities"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("follower_count") and type(data["follower_count"]) == int and data["follower_count"] != None:
+    if data.has_key("follower_count") and isinstance(data["follower_count"], int) and data["follower_count"] != None:
         LinkedInContact.update(follower_count = data["follower_count"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
+    if data.has_key("year_founded") and data["year_founded"] != None:
+        LinkedInContact.update(year_founded = data["year_founded"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
+    if data.has_key("size") and data["size"] != None:
+        LinkedInContact.update(size = data["size"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     return
-
-"""
-def updateContact(data):
-    if data.has_key("contact_no") and data["contact_no"] != None:
-        Contact.update(contact_no = data["contact_no"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("org_type") and data["org_type"] != None:
-        Contact.update(org_type = data["org_type"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("description") and data["description"] != None:
-        Contact.update(description = data["description"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("address") and data["address"] != None:
-        Contact.update(address = data["address"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("city") and data["city"] != None:
-        Contact.update(city = data["city"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("state") and data["state"] != None:
-        Contact.update(state = data["state"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("postal_code") and type(data["postal_code"]) == int and data["postal_code"] != None:
-        Contact.update(postal_code = data["postal_code"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("fax_no") and data["fax_no"] != None:
-        Contact.update(fax_no = data["fax_no"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("email_address") and data["email_address"] != None:
-        Contact.update(email_address = data["email_address"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("website") and data["website"] != None:
-        Contact.update(website = data["website"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("follower_count") and type(data["follower_count"]) == int and data["follower_count"] != None:
-        Contact.update(follower_count = data["follower_count"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("linkedin_resource_locator") and data["linkedin_resource_locator"] != None:
-        Contact.update(linkedin_resource_locator = data["linkedin_resource_locator"]).where(Contact.org_name == data["org_name"]).execute()
-    if data.has_key("facebook_resource_locator") and data["facebook_resource_locator"] != None:
-        Contact.update(facebook_resource_locator = str(data["facebook_resource_locator"])).where(Contact.org_name == data["org_name"]).execute()
-    return
-"""
 
 """
 Message Handling
@@ -234,7 +181,6 @@ def callback(ch, method, properties, body):
             newContact = FacebookContact.select().where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"])
             if newContact.exists():
                 newContact = newContact.get()
-                """sys.stderr.write("Collision: " + str(newContact.facebook_resource_locator) + ": " + data["facebook_resource_locator"] + "\n")"""
             else:
                 newContact = FacebookContact(facebook_resource_locator=data["facebook_resource_locator"])
                 try:
@@ -243,22 +189,18 @@ def callback(ch, method, properties, body):
                     """
                     Collide, should not happen!
                     """
-                    sys.stderr.write("Collision occured: " + str(e)) 
+                    sys.stderr.write("Collision occured: " + str(e))
                     psql_db.rollback()
             updateFacebookContact(data)
         elif data["protocol"] == "linkedin":
             newContact = LinkedInContact.select().where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"])
             if newContact.exists():
                 newContact = newContact.get()
-                """sys.stderr.write("Collision: " + str(newContact.facebook_resource_locator) + ": " + data["facebook_resource_locator"] + "\n")"""
             else:
                 newContact = LinkedInContact(linkedin_resource_locator=data["linkedin_resource_locator"])
                 try:
                     newContact.save(force_insert=True)
                 except Exception, e:
-                    """
-                    Collide, should not happen!
-                    """
                     sys.stderr.write("Collision occured: " + str(e)) 
                     psql_db.rollback()
             updateLinkedInContact(data)
@@ -268,7 +210,6 @@ def callback(ch, method, properties, body):
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
-    
 
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='store')

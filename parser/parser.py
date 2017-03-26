@@ -2,8 +2,6 @@ import os, sys
 import pika
 import json
 import time
-import threading
-from Queue import Queue
 import traceback
 
 """
@@ -11,7 +9,6 @@ parser specific dependencies
 """
 
 from lxml import html
-
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
@@ -40,11 +37,6 @@ store_egress_channel = mqtt_connection.channel()
 store_egress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
 filter_egress_channel = mqtt_connection.channel()
 filter_egress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
-
-
-"""
-Parsers
-"""
 
 def linkedIn_parse(url, datafrom_xpath):
     """
@@ -98,7 +90,9 @@ def linkedIn_parse(url, datafrom_xpath):
             'follower_count': follower_count,
             'specialities': specialities,
             'country': country,
-            'linkedin_resource_locator': url
+            'linkedin_resource_locator': url,
+            'year_founded': year_founded,
+            'size': size
         }
 
         for coy in alsoViewed:
@@ -162,7 +156,7 @@ def facebook_parse(fb_id, facebook_company_info):
         'intl_number_with_plus': company_intl_number_with_plus
     }
 
-    return company_info, potential_leads      
+    return company_info, potential_leads
 
 
 def foursquare_parse(foursquare_venue_info):
@@ -210,7 +204,7 @@ def parseCallback(ch, method, properties, body):
         global MAX_DEPTH
         
         data = json.loads(body)
-        if data.has_key("maxDepth") and type(data["maxDepth"]) == int:
+        if data.has_key("maxDepth") and isinstance(data["maxDepth"], int):
             MAX_DEPTH = int(data["maxDepth"])
  
             return
