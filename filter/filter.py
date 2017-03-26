@@ -63,7 +63,6 @@ while True:
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
     except Exception:
-        print "connection failed"
         time.sleep(5)
 
 pqdata = dict()
