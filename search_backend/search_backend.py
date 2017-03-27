@@ -102,8 +102,7 @@ def send_facebook_contacts(channel, facebook_contacts, _routing_key):
             "protocol": "fb", 
             "resource_locator": contact["id"], 
             "raw_response": contact, 
-            "depth": 1,
-            "priority": 1
+            "depth": 1
         }
         channel.basic_publish(
             exchange='',
