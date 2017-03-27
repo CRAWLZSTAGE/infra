@@ -69,16 +69,15 @@ class FourSquareContact(BaseModel):
     description = TextField(null = True)
     address = TextField(null = True)
     country = CharField(null = True)
-    state = CharField(null = True)
+    #state = CharField(null = True)
     postal_code = IntegerField(null = True)
     contact_no = CharField(null = True)
-    industry = CharField(null = True)
+    #industry = CharField(null = True)
     fan_count = IntegerField(null = True)
     hours = TextField(null = True)
     link = TextField(null = True)
     longitude = TextField(null = True)
-    latitude = TextField(null = True)
-    intl_number_with_plus = TextField(null = True)    
+    latitude = TextField(null = True)  
 
 while True:
     try:
@@ -194,14 +193,14 @@ def updateFourSquareContact(data):
         FourSquareContact.update(address = data["address"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("country") and data["country"] != None:
         FourSquareContact.update(country = data["country"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("state") and data["state"] != None:
-        FourSquareContact.update(state = data["state"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    # if data.has_key("state") and data["state"] != None:
+    #     FourSquareContact.update(state = data["state"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
         FourSquareContact.update(postal_code = data["postal_code"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("contact_no") and data["contact_no"] != None:
         FourSquareContact.update(contact_no = data["contact_no"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("industry") and data["industry"] != None:
-        FourSquareContact.update(industry = data["industry"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    # if data.has_key("industry") and data["industry"] != None:
+    #     FourSquareContact.update(industry = data["industry"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("fan_count") and isinstance(data["fan_count"], int) and data["fan_count"] != None:
         FourSquareContact.update(fan_count = data["fan_count"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("hours") and data["hours"] != None:
@@ -212,8 +211,8 @@ def updateFourSquareContact(data):
         FourSquareContact.update(longitude = data["longitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("latitude") and data["latitude"] != None:
         FourSquareContact.update(latitude = data["latitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
-        FourSquareContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    # if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
+    #     FourSquareContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     return
 """
 Message Handling

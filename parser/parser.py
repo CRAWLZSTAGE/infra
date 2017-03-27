@@ -171,30 +171,45 @@ def foursquare_parse(foursquare_venue_info):
     """
 
     if foursquare_venue_info:
-        company_name = foursquare_venue_info['name'] if ('name' in foursquare_venue_info) else ''
-        #company_about = facebook_company_info['about'] if ('about' in facebook_company_info) else ''
-        company_phone = foursquare_venue_info['contact']['phone'] if (foursquare_venue_info.has_key("contact") and foursquare_venue_info["contact"].has_key("phone")) else ''
-        company_category = foursquare_venue_info['categories'][0]['name'] if (not(foursquare_venue_info['categories']) and foursquare_venue_info['categories'][0].has_key("name")) else ''
-        company_street = foursquare_venue_info["location"]['address'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("address")) else ''
-        company_country = foursquare_venue_info["location"]['country'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("country")) else ''
-        company_postal = foursquare_venue_info["location"]['postalCode'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("postalCode")) else ''
-
+        fsquare_id = foursquare_venue_info['id'] if ('id' in foursquare_venue_info) else None
+        company_name = foursquare_venue_info['name'] if ('name' in foursquare_venue_info) else None
+        company_about = foursquare_get_categories(foursquare_venue_info["categories"]) if (foursquare_venue_info.has_key("categories")) else None
+        company_phone = foursquare_venue_info['contact']['phone'] if (foursquare_venue_info.has_key("contact") and foursquare_venue_info["contact"].has_key("phone")) else None
+        company_street = foursquare_venue_info["location"]['address'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("address")) else None
+        company_country = foursquare_venue_info["location"]['country'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("country")) else None
+        company_postal = foursquare_venue_info["location"]['postalCode'] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("postalCode")) else None
+        company_longitude = foursquare_venue_info["location"]["lng"] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("lng")) else None
+        company_latitude = foursquare_venue_info["location"]["lat"] if (foursquare_venue_info.has_key("location") and foursquare_venue_info["location"].has_key("lat")) else None
+        company_fan_count = foursquare_venue_info["likes"]["count"] if (foursquare_venue_info.has_key("likes") and foursquare_venue_info["likes"].has_key("count")) else None
+        company_hours = foursquare_venue_info["hours"]["status"] if (foursquare_venue_info.has_key("hours") and foursquare_venue_info["hours"].has_key("status")) else None
+        company_link = foursquare_venue_info["url"] if (foursquare_venue_info.has_key("url")) else None
     """
     TODO
     this section
     """
 
     company_info = {
-        'foursquare_resource_locator':foursquare_venue_info['id'],
+        'foursquare_resource_locator': fsquare_id,
+        'description': company_about,
         'org_name': company_name,
         'address': company_street,
         'country': company_country,
-        'postal_code': company_postal,
+        'postal_code': int(company_postal),
         'contact_no': company_phone,
-        'industry': company_category
+        'longitude': company_longitude,
+        'latitude': company_latitude,
+        'fan_count': company_fan_count,
+        'hours': company_hours,
+        'link': company_link
     }
 
     return company_info   
+
+def foursquare_get_categories(categories_array):
+    categories_string = None
+    if categories_array:
+        categories_string = ", ".join([category["name"] for category in categories_array])
+    return categories_string        
 
 
 def parseCallback(ch, method, properties, body):
