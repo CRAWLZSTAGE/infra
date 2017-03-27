@@ -57,8 +57,8 @@ ENV DB_NAME=TEST_DB
 ENV RECORD_TIMEOUT=1
 
 COPY requirements.txt /
-COPY filter.py /
 
 RUN pip install -r requirements.txt
+COPY filter.py /
 
 CMD ["python", "filter.py"]

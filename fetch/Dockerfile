@@ -54,8 +54,8 @@ ENV FACEBOOK_ACCESS_TOKEN=NOT_THIS_TOKEN
 ENV MAX_DEPTH=4
 
 COPY requirements.txt /
-COPY fetch.py /
 
 RUN pip install -r requirements.txt
+COPY fetch.py /
 
 CMD ["python", "fetch.py"]

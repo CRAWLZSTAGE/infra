@@ -53,8 +53,8 @@ ENV MQTT_PASSWORD=NOT_THIS_PASSWORD
 ENV MAX_DEPTH=4
 
 COPY requirements.txt /
-COPY parser.py /
 
 RUN pip install -r requirements.txt
+COPY parser.py /
 
 CMD ["python", "parser.py"]
