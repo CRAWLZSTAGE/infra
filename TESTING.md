@@ -54,6 +54,8 @@ docker exec -i -t  infra_parser_1 /bin/bash
 ##LinkedIn
 
 ```
+{"potential_leads": ["https://www.linkedin.com/company/cisco"], "protocol": "linkedin", "depth": 1}
+
 ```
 
 

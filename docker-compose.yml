@@ -55,6 +55,17 @@ services:
     depends_on:
       - mqtt
       - db
+  search_backend:
+    build: ./search_backend
+    env_file: _deployment/fetch.env
+    links:
+      - mqtt
+      - db
+    depends_on:
+      - mqtt
+      - db
+    ports:
+      - 80:80
 
 
 
