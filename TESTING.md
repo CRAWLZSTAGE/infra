@@ -6,58 +6,73 @@ We use boot2docker image for consistency. We shall set the docker environment va
 
 ```sh
 
-# Local Deployment
+# Set up local environment variables
 eval $(docker-machine env local-dev)
 
+# Rebuild
 docker compose build
 docker-compose up
 
 # Teardown
-docker-compose rm
+docker-compose rm -f
+
+# Inspecting running container
+docker exec -i -t $TARGET_CONTAINER /bin/bash
 
 ```
 
 ## Env file
 
-Enviornmental variables are stored in _deployment. The files and expected 
+Enviornmental variables are stored in _deployment.
+
+### Facebook
+
+You may find the relevant information [here](https://developers.facebook.com/tools/accesstoken/)
 
 ```
 
 #_deployment/fetch.env
 FACEBOOK_ACCESS_TOKEN=******
-## https://developers.facebook.com/tools/accesstoken/
-
-
-
-
-docker exec -i -t  infra_parser_1 /bin/bash
-```
-
-# Test Cases
-
-## Facebook
 
 ```
+
+## Test Cases
+
+To be updated with automated test cases.
+
+### RabbitMQ
+
+```
+
+# maxDepth
+# Queues [fetch, parse]
 {"maxDepth": 1}
+
+# Facebook
+# Queue [filter]
 {"potential_leads": ["1443823632507167"], "protocol": "fb", "depth": 1}
-{"maxDepth": 2}
 {"potential_leads": ["420608754800233"], "protocol": "fb", "depth": 1}
-{"maxDepth": 3}
 {"potential_leads": ["10084673031"], "protocol": "fb", "depth": 1}
-{"maxDepth": 1}
 {"potential_leads": ["113901278620393"], "protocol": "fb", "depth": 1}
-{"maxDepth": 3}
 {"potential_leads": ["104958162837"], "protocol": "fb", "depth": 1}
 {"potential_leads": ["128737643875635"], "protocol": "fb", "depth": 1}
-```
 
-##LinkedIn
-
-```
+# LinkedIn
+# Queue [filter]
 {"potential_leads": ["https://www.linkedin.com/company/cisco"], "protocol": "linkedin", "depth": 1}
 
 ```
 
+### Backend API
+
+```
+curl -v http://backend.crawlz.me/api/maxDepth/1?api_key=******
+curl -v http://backend.crawlz.me/api/search/jon%20stewart
+curl -v http://backend.crawlz.me/api/search/intel
+curl -v http://backend.crawlz.me/api/search/national%20university%20of%20singapore
+curl -v http://backend.crawlz.me/api/search/mediacorp
+curl -v http://backend.crawlz.me/api/search/nanyang%20technological%university
+```
 
 ## Local Deployment
 
@@ -77,7 +92,13 @@ docker-machine ssh local-dev sudo mkdir -p /mnt/sda1/ext
 
 ## Remote Deployment
 
+Make sure that you have root access to the target machine and your ssh key is in authorized_keys. You may change the target ip-address to your preferred endpoint
+
 ```sh
+
+docker-machine create --driver generic \
+  --generic-ip-address $(dig +short crawlz.me | tail -n 1) \
+  --generic-ssh-key $HOME/.ssh/id_rsa prod
 
 ```
 
@@ -85,8 +106,10 @@ docker-machine ssh local-dev sudo mkdir -p /mnt/sda1/ext
 ## Make disk space great again!
 
 ```sh
+
 # Delete all containers
 docker rm $(docker ps -a -q)
 # Delete all images
 docker rmi $(docker images -q)
+
 ```
