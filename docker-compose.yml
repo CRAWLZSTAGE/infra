@@ -61,11 +61,21 @@ services:
     links:
       - mqtt
       - db
+      - nginx-proxy
     depends_on:
       - mqtt
       - db
+    environment:
+      - VIRTUAL_HOST=backend.crawlz.me
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
     ports:
       - 80:80
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+
 
 
 
