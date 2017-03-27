@@ -156,7 +156,8 @@ def send_linkedin_ids(channel, linkedin_ids, _routing_key):
 Flask
 
 WARN
-Parallelize workflow on loaded search api
+- Parallelize workflow on loaded search api
+- reparsing data is not time efficient -> find a way to join 2 sets of data together?
 """
 
 from flask import Flask, url_for
@@ -169,7 +170,7 @@ from extract_search import find_facebook_links, find_linkedin_links
 def search(searchTerm):
     """SEARCH"""
     facebook_contacts, facebook_ids = find_facebook_links(searchTerm)
-    linkedin_ids = find_linkedin_links(searchTerm)
+    """linkedin_ids = find_linkedin_links(searchTerm)"""
 
     mqtt_connection = openConnection()
     pqdata = dict()
@@ -181,16 +182,19 @@ def search(searchTerm):
 
     send_facebook_contacts(egress_channel_parse, facebook_contacts, "parse")
     send_facebook_ids(egress_channel_filter, facebook_ids, "filter")
-    send_linkedin_ids(egress_channel_filter, linkedin_ids, "filter")
+    """send_linkedin_ids(egress_channel_filter, linkedin_ids, "filter")"""
 
     mqtt_connection.close()
 
+    """using sleep here to wait for parser to store data"""
+    time.sleep(0.05)
+
     facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))
-    linkedinContacts = LinkedInContact.select().where(LinkedInContact.org_name.contains(searchTerm))
+    """linkedinContacts = LinkedInContact.select().where(LinkedInContact.org_name.contains(searchTerm))"""
     returnValues = {
-        "facebookContacts": _convertToList(facebookContacts),
-        "linkedinContacts": _convertToList(linkedinContacts)
+        "facebookContacts": _convertToList(facebookContacts)
     }
+    """ ,"linkedinContacts": _convertToList(linkedinContacts) """
     return json.dumps(returnValues)
 
 
