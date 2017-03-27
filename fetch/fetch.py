@@ -26,10 +26,6 @@ Note:
 Should write classes and subclasses to deal with fetching from different sources.
 """
 
-"""
-RabbitMQ support courtesy of Pika
-"""
-
 while True:
     try:
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)

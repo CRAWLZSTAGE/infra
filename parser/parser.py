@@ -13,10 +13,6 @@ MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
-"""
-RabbitMQ support courtesy of Pika
-"""
-
 while True:
     try:
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)

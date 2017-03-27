@@ -56,8 +56,8 @@ ENV DB_USER=NOT_THIS_USER
 ENV DB_NAME=TEST_DB
 
 COPY requirements.txt /
-COPY store.py /
 
 RUN pip install -r requirements.txt
+COPY store.py /
 
 CMD ["python", "store.py"]

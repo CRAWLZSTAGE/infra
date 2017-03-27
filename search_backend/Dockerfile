@@ -50,11 +50,19 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python
 ENV MQTT_HOST=mqtt
 ENV MQTT_USER=NOT_THIS_USER
 ENV MQTT_PASSWORD=NOT_THIS_PASSWORD
-ENV MAX_DEPTH=4
+ENV DB_HOST=db
+ENV DB_PASSWORD=NOT_THIS_PASSWORD
+ENV DB_USER=NOT_THIS_USER
+ENV DB_NAME=TEST_DB
+ENV FACEBOOK_ACCESS_TOKEN=NOT_THIS_TOKEN
 
 COPY requirements.txt /
-
 RUN pip install -r requirements.txt
-COPY parser.py /
 
-CMD ["python", "parser.py"]
+COPY search_backend.py /
+COPY extract_search.py /
+
+EXPOSE 80
+CMD ["python", "search_backend.py"]
+
+## Test with docker run -i -t $(docker build . | tail -1 | awk '{ print $NF }')

@@ -68,7 +68,6 @@ while True:
         mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
         break
     except Exception:
-        print "connection failed"
         time.sleep(5)
 
 pqdata = dict()
@@ -210,7 +209,7 @@ def callback(ch, method, properties, body):
                 body=json.dumps(fetch_data),
                 properties=pika.BasicProperties(
                     delivery_mode = 1,
-                    priority=0 # default priority
+                    priority = int(raw_data["priority"]) if raw_data.has_key("priority") else 0 # default priority
                 )
             )
     except Exception as e:
