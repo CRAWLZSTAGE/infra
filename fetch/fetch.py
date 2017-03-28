@@ -79,12 +79,18 @@ def facebook_fetch(facebook_id):
 foursquare_version = '20170101'
 
 def foursquare_fetch(foursquare_id):
+    """
+    https://developer.foursquare.com/docs/
+    """
     foursquare_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
     foursquare_response = requests.get(foursquare_url)  
     foursquare_response_json = foursquare_response.json() 
     return foursquare_response_json["response"]["venue"]
 
 def foursquare_fetch_nextvenues(foursquare_id):
+    """
+    https://developer.foursquare.com/docs/
+    """
     nextvenues_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "/nextvenues?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
     web_response = requests.get(nextvenues_url)
     resp = web_response.json()
@@ -92,30 +98,53 @@ def foursquare_fetch_nextvenues(foursquare_id):
     return next_venue_ids if next_venue_ids else []    
 
 def google_fetch(google_id):
+    """
+    https://developers.google.com/places/web-service/
+    """
     google_details_url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=" + google_id + "&key=" + GOOGLE_API_KEY
     google_response = requests.get(google_details_url)
     google_response_json = google_response.json()
     return google_response_json["result"]
 
 def google_fetch_nextvenues(google_response):
+    """
+    https://developers.google.com/places/web-service/
+
+    Parameters:
+    google_response: json output from google_fetch()
+
+    Outputs:
+    google_nextvenues_ids: array of google place_ids for next venues to explore
+    """
+
+    """
+    First we find the latitude and longitude of the current venue
+    """
     venue_latitude = google_response["geometry"]["location"]["lat"] if (google_response.has_key('geometry') and google_response['geometry'].has_key('location') and google_response['geometry']['location'].has_key('lat')) else None
     venue_longitude = google_response["geometry"]["location"]["lng"] if (google_response.has_key('geometry') and google_response['geometry'].has_key('location') and google_response['geometry']['location'].has_key('lng')) else None
 
     google_nextvenues_ids = [] 
 
     if (venue_latitude != None) and (venue_longitude != None):
-        sys.stderr.write("here")
-        sys.stderr.flush()
-        new_latitude = venue_latitude + (1.0 / 222.0)
-        new_longitude = venue_longitude + (1.0 / 222.0)
+        """
+        We calculate new latitude and longitude to find new place_ids of locations aorund that coordinate
+
+        Here we divide by 222.0 because 1 degree = 111.0km approximately and we want to move
+        our search coordinate by 500m approximately
+
+        Positive latitude is above the equator
+        Positive longitude is east of the meridian
+
+        We set our search radius as 500m
+        """
+        new_latitude = float(venue_latitude) + (1.0 / 222.0)
+        new_longitude = float(venue_longitude) + (1.0 / 222.0)
         radius = 500
         next_venues_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + str(new_latitude) + "," + str(new_longitude) + "&radius=" + str(radius) + "&rankby=prominence&key=" + GOOGLE_API_KEY
         response = requests.get(next_venues_url)
         response_json = response.json()
         venues_results = response_json["results"]
         for venue_result in venues_results:
-            sys.stderr.write("adding: \n" + venue_result["place_id"] + "\n")
-            sys.stderr.flush()
             google_nextvenues_ids.append(venue_result["place_id"])
 
     return google_nextvenues_ids     

@@ -254,8 +254,8 @@ def updateGoogleContact(data):
         GoogleContact.update(longitude = data["longitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
     if data.has_key("latitude") and data["latitude"] != None:
         GoogleContact.update(latitude = data["latitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    # if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
-    #     FourSquareContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
+        GoogleContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
     return    
 """
 Message Handling

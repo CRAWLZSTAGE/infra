@@ -229,8 +229,6 @@ def callback(ch, method, properties, body):
                 else:
                     return  
             if protocol == "google":
-                sys.stderr.write("Updating: \n" + lead + "\n")
-                sys.stderr.flush()
                 if not seen_google(lead):
                     newRecord = Record_Google(google_id=lead, last_accessed= datetime.utcnow())
                     newRecord.save(force_insert=True)

@@ -165,10 +165,6 @@ def foursquare_parse(foursquare_venue_info):
 
     Outputs:
     company_info: dict , information of the company
-    other_companies_pages: array, each element containing an id and name
-
-    TO-DO:
-    company_street and company_postal should not both be under address
     """
 
     if foursquare_venue_info:
@@ -208,17 +204,33 @@ def foursquare_parse(foursquare_venue_info):
 
 
 def foursquare_get_categories(categories_array):
+    """
+    Parameters:
+    categories_array is the categories field found in the foursquare response
+
+    Output:
+    categories_string
+
+    Returns a concatenated string of the differnet categories
+    """
     categories_string = None
     if categories_array:
         categories_string = ", ".join([category["name"] for category in categories_array])
     return categories_string 
 
+
 def google_parse(google_venue_info):
+    """
+    Parameters:
+    google_venue_info: dict, from fetcher, using requests.get function
+
+    Outputs:
+    company_info: dict , information of the company
+    """
     
     if google_venue_info:
         google_id = google_venue_info['place_id'] if ('place_id' in google_venue_info) else None
         company_name = google_venue_info['name'] if ('name' in google_venue_info) else None
-        #company_about = foursquare_get_categories(foursquare_venue_info["categories"]) if (foursquare_venue_info.has_key("categories")) else None
         company_phone = google_venue_info['formatted_phone_number'] if ('formatted_phone_number' in google_venue_info) else None
         company_street, company_country, company_postal = google_get_address(google_venue_info['adr_address'])
         company_longitude = google_venue_info['geometry']['location']['lng'] if (google_venue_info.has_key("geometry") and google_venue_info["geometry"].has_key("location") and google_venue_info["geometry"]["location"].has_key("lng")) else None
@@ -247,22 +259,43 @@ def google_parse(google_venue_info):
       
 
 def google_get_address(google_address_info):
+    """
+    Parameters:
+    "adr_address" field from google_response
+
+    Output:
+    company_street: string
+    company_country: string
+    company_postal: string
+
+    adr-address consists of a string with <span> tags containing street, country, postal-code information
+    This function serves to split up the string and obtain the various information
+    """
     company_street = company_country = company_postal = None
 
     if google_address_info:
         address_soup = BeautifulSoup(google_address_info, 'html.parser')
-        street_array = address_soup.find_all('span', class_=lambda x: (x != 'country-name') and (x != 'postal_code'))
+        street_array = address_soup.find_all('span', class_=lambda x: (x != 'country-name') and (x != 'postal-code'))
         country_array = address_soup.find_all('span', class_="country-name")
         postal_code_array = address_soup.find_all('span', class_="postal-code")
 
         company_street = ', '.join([tag.get_text() for tag in street_array]) if street_array else None
         company_country = country_array[0].get_text() if country_array else None
-        company_postal = postal_code_array[0].get_text() if postal_code_array else None
+        company_postal = int(postal_code_array[0].get_text()) if postal_code_array else None
 
     return company_street, company_country, company_postal    
 
 
 def google_get_category(types_array):
+    """
+    Parameters:
+    types_array consists of the "types" field that can be found in the google raw_response
+
+    Output:
+    categories_string: string
+
+    Returns a concatenated string of the different types
+    """
     categories_string = None
     if types_array:
         categories_string = ', '.join(types_array)
