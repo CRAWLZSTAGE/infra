@@ -18,6 +18,7 @@ MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
 FOURSQUARE_CLIENT_ID = os.environ.get('FOURSQUARE_CLIENT_ID')
 FOURSQUARE_CLIENT_SECRET = os.environ.get('FOURSQUARE_CLIENT_SECRET')
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
 """
@@ -89,6 +90,30 @@ def foursquare_fetch_nextvenues(foursquare_id):
     resp = web_response.json()
     next_venue_ids = [venue["id"] for venue in resp["response"]["nextVenues"]["items"]]
     return next_venue_ids if next_venue_ids else []    
+
+def google_fetch(google_id):
+    google_details_url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=" + google_id + "&key=" + GOOGLE_API_KEY
+    google_response = requests.get(google_details_url)
+    google_response_json = venue_response.json()
+    return google_response_json["result"]
+
+def google_fetch_nextvenues(google_response):
+    venue_latitude = google_response["geometry"]["location"]["lat"] if (google_response.has_key('geometry') and google_response['geometry'].has_key('location') and google_response['geometry']['location'].has_key('lat')) else None
+    venue_longitude = google_response["geometry"]["location"]["lng"] if (google_response.has_key('geometry') and google_response['geometry'].has_key('location') and google_response['geometry']['location'].has_key('lng')) else None
+
+    google_nextvenues_ids = [] 
+
+    if (venue_latitude and venue_longitude):
+        new_latitude = venue_latitude + (1.0 / 222.0)
+        new_longitude = venue_longitude + (1.0 / 222.0)
+        radius = 500
+        next_venues_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + str(new_latitude) + "," + str(new_longitude) + "&radius=" + str(radius) + "&rankby=prominence&key=" + GOOGLE_API_KEY
+        response = requests.get(google_url)
+        response_json = response.json()
+        venues_results = response_json["results"]
+        google_nextvenues_ids.extend([venue["place_id"] for venue in venues_results])
+
+    return google_nextvenues_ids     
 
 """
 Message handling
@@ -165,7 +190,20 @@ def callback(ch, method, properties, body):
             except Exception as e:
                 traceback.print_exc()
                 deleteNode(data)
-                raise e       
+                raise e    
+        elif data["protocol"] == "google":
+            try:
+                google_response = google_fetch(data["resource_locator"])
+                if google_response == None:
+                    raise Exception("Unable to find google id: " + str(data["resource_locator"]))  
+                google_next_venues = google_fetch_nextvenues(google_response)
+                if google_next_venues == None:
+                    raise Exception("Unable to find next venues of google id: " + str(data["resource_locator"]))
+                new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": google_response, "depth": data["depth"], "potential_leads": google_next_venues}  
+            except Exception as e:
+                traceback.print_exc()
+                deleteNode(data)
+                raise e               
         else:
             deleteNode(data)
             raise Exception("Unable to categorize fetch instance: \n" + str(data["protocol"]) + ": " + str(data["resource_locator"]))

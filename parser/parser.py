@@ -3,6 +3,7 @@ import pika
 import json
 import time
 import traceback
+from bs4 import BeautifulSoup
 
 """
 parser specific dependencies
@@ -205,11 +206,67 @@ def foursquare_parse(foursquare_venue_info):
 
     return company_info   
 
+
 def foursquare_get_categories(categories_array):
     categories_string = None
     if categories_array:
         categories_string = ", ".join([category["name"] for category in categories_array])
-    return categories_string        
+    return categories_string 
+
+def google_parse(google_venue_info):
+    
+    if google_venue_info:
+        google_id = google_venue_info['place_id'] if ('place_id' in google_venue_info) else None
+        company_name = google_venue_info['name'] if ('name' in google_venue_info) else None
+        #company_about = foursquare_get_categories(foursquare_venue_info["categories"]) if (foursquare_venue_info.has_key("categories")) else None
+        company_phone = google_venue_info['formatted_phone_number'] if ('formatted_phone_number' in google_venue_info) else None
+        company_street, company_country, company_postal = google_get_address(google_venue_info['adr_address'])
+        company_longitude = google_venue_info['geometry']['location']['lng'] if (google_venue_info.has_key("geometry") and google_venue_info["geometry"].has_key("location") and google_venue_info["geometry"]["location"].has_key("lng")) else None
+        company_latitude = google_venue_info['geometry']['location']['lat'] if (google_venue_info.has_key("geometry") and google_venue_info["geometry"].has_key("location") and google_venue_info["geometry"]["location"].has_key("lat")) else None
+        company_rating = google_venue_info['rating'] if ('rating' in google_venue_info) else None
+        company_category = google_get_category(google_venue_info['types']) if ('types' in google_venue_info) else None
+        company_link = google_venue_info['website'] if ('website' in google_venue_info) else None 
+        company_intl_number_with_plus = google_venue_info['international_phone_number'] if ('international_phone_number' in google_venue_info) else None
+
+    company_info = {
+        'org_name': company_name,
+        'address': company_street,
+        'country': company_country,
+        'postal_code': company_postal,
+        'contact_no': company_phone,
+        'industry': company_category,
+        'google_resource_locator': google_id,
+        'longitude': company_longitude,
+        'latitude': company_latitude,
+        'rating': company_rating,
+        'link': company_link,
+        'intl_number_with_plus': company_intl_number_with_plus
+    }
+
+    return company_info    
+      
+
+def google_get_address(google_address_info):
+    company_street = company_country = company_postal = None
+
+    if google_address_info:
+        address_soup = BeautifulSoup(google_address_info, 'html.parser')
+        street_array = address_soup.find_all('span', class_=lambda x: (x != 'country-name') and (x != 'postal_code'))
+        country_array = address_soup.find_all('span', class_="country-name")
+        postal_code_array = address_soup.find_all('span', class_="postal-code")
+
+        company_street = ', '.join([tag.get_text() for tag in street_array]) if street_array else None
+        company_country = country_array[0].get_text() if country_array else None
+        company_postal = postal_code_array[0].get_text() if postal_code_array else None
+
+    return company_street, company_country, company_postal    
+
+
+def google_get_category(types_array):
+    categories_string = None
+    if types_array:
+        categories_string = ', '.join(types_array)
+    return categories_string    
 
 
 def parseCallback(ch, method, properties, body):
@@ -242,6 +299,12 @@ def parseCallback(ch, method, properties, body):
             contact = foursquare_parse(data["raw_response"])
             if contact == None:
                 return
+
+        elif data["protocol"] == "google":
+            potential_leads = data["potential_leads"]
+            contact = google_parse(data["raw_response"])
+            if contact == None:
+                return        
 
         contact["protocol"] = data["protocol"]
         store_egress_channel.basic_publish(
