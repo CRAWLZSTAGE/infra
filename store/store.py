@@ -63,6 +63,37 @@ class LinkedInContact(BaseModel):
     year_founded = TextField(null = True)
     size = TextField(null = True)
 
+class FourSquareContact(BaseModel):
+    foursquare_resource_locator = TextField(primary_key=True)
+    org_name = CharField(null = True)
+    description = TextField(null = True)
+    address = TextField(null = True)
+    country = CharField(null = True)
+    #state = CharField(null = True)
+    postal_code = IntegerField(null = True)
+    contact_no = CharField(null = True)
+    #industry = CharField(null = True)
+    fan_count = IntegerField(null = True)
+    hours = TextField(null = True)
+    link = TextField(null = True)
+    longitude = TextField(null = True)
+    latitude = TextField(null = True)  
+
+class GoogleContact(BaseModel):
+    google_resource_locator = TextField(primary_key=True)
+    org_name = CharField(null = True)
+    address = CharField(null = True)
+    country = CharField(null = True)
+    postal_code = IntegerField(null = True)
+    contact_no = CharField(null = True)
+    industry = CharField(null = True)
+    rating = FloatField(null = True)
+    link = TextField(null = True)
+    longitude = TextField(null = True)
+    latitude = TextField(null = True)
+    intl_number_with_plus = TextField(null = True)
+
+
 while True:
     try:
         psql_db.connect()
@@ -76,6 +107,11 @@ if not FacebookContact.table_exists():
 if not LinkedInContact.table_exists():
     LinkedInContact.create_table()
 
+if not FourSquareContact.table_exists():
+    FourSquareContact.create_table()    
+
+if not GoogleContact.table_exists():
+    GoogleContact.create_table()
 """
 RabbitMQ support courtesy of Pika
 
@@ -165,6 +201,62 @@ def updateLinkedInContact(data):
         LinkedInContact.update(size = data["size"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     return
 
+def updateFourSquareContact(data):
+    if data.has_key("org_name") and data["org_name"] != None:
+        FourSquareContact.update(org_name = data["org_name"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("description") and data["description"] != None:
+        FourSquareContact.update(description = data["description"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("address") and data["address"] != None:
+        FourSquareContact.update(address = data["address"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("country") and data["country"] != None:
+        FourSquareContact.update(country = data["country"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    # if data.has_key("state") and data["state"] != None:
+    #     FourSquareContact.update(state = data["state"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
+        FourSquareContact.update(postal_code = data["postal_code"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("contact_no") and data["contact_no"] != None:
+        FourSquareContact.update(contact_no = data["contact_no"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    # if data.has_key("industry") and data["industry"] != None:
+    #     FourSquareContact.update(industry = data["industry"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("fan_count") and isinstance(data["fan_count"], int) and data["fan_count"] != None:
+        FourSquareContact.update(fan_count = data["fan_count"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("hours") and data["hours"] != None:
+        FourSquareContact.update(hours = data["hours"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("link") and data["link"] != None:
+        FourSquareContact.update(link = data["link"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("longitude") and data["longitude"] != None:
+        FourSquareContact.update(longitude = data["longitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    if data.has_key("latitude") and data["latitude"] != None:
+        FourSquareContact.update(latitude = data["latitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    # if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
+    #     FourSquareContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    return
+
+
+def updateGoogleContact(data):
+    if data.has_key("org_name") and data["org_name"] != None:
+        GoogleContact.update(org_name = data["org_name"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("address") and data["address"] != None:
+        GoogleContact.update(address = data["address"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("country") and data["country"] != None:
+        GoogleContact.update(country = data["country"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
+        GoogleContact.update(postal_code = data["postal_code"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("contact_no") and data["contact_no"] != None:
+        GoogleContact.update(contact_no = data["contact_no"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("industry") and data["industry"] != None:
+        GoogleContact.update(industry = data["industry"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("rating") and isinstance(data["rating"], float) and data["rating"] != None:
+        GoogleContact.update(rating = data["rating"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("link") and data["link"] != None:
+        GoogleContact.update(link = data["link"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("longitude") and data["longitude"] != None:
+        GoogleContact.update(longitude = data["longitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("latitude") and data["latitude"] != None:
+        GoogleContact.update(latitude = data["latitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
+        GoogleContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    return    
 """
 Message Handling
 This is real ugly, should introduce classes
@@ -175,7 +267,7 @@ def callback(ch, method, properties, body):
         data = json.loads(body)
         if not data.has_key("org_name") or not data.has_key("protocol"):
             return
-        if not data.has_key("facebook_resource_locator") and not data.has_key("linkedin_resource_locator"):
+        if not data.has_key("facebook_resource_locator") and not data.has_key("linkedin_resource_locator") and not data.has_key("foursquare_resource_locator") and not data.has_key("google_resource_locator"):
             raise Exception("Unable to identify resource")
         if data["protocol"] == "fb":
             newContact = FacebookContact.select().where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"])
@@ -204,6 +296,36 @@ def callback(ch, method, properties, body):
                     sys.stderr.write("Collision occured: " + str(e)) 
                     psql_db.rollback()
             updateLinkedInContact(data)
+        elif data["protocol"] == "fsquare":
+            newContact = FourSquareContact.select().where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"])
+            if newContact.exists():
+                newContact = newContact.get()
+            else:
+                newContact = FourSquareContact(foursquare_resource_locator=data["foursquare_resource_locator"])
+                try:
+                    newContact.save(force_insert=True)
+                except Exception, e:
+                    """
+                    Collide, should not happen!
+                    """
+                    sys.stderr.write("Collision occured: " + str(e))
+                    psql_db.rollback()
+            updateFourSquareContact(data)   
+        elif data["protocol"] == "google":
+            newContact = GoogleContact.select().where(GoogleContact.google_resource_locator == data["google_resource_locator"])
+            if newContact.exists():
+                newContact = newContact.get()
+            else:
+                newContact = GoogleContact(google_resource_locator=data["google_resource_locator"])
+                try:
+                    newContact.save(force_insert=True)
+                except Exception, e:
+                    """
+                    Collide, should not happen!
+                    """
+                    sys.stderr.write("Collision occured: " + str(e))
+                    psql_db.rollback()
+            updateGoogleContact(data)     
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
         traceback.print_exc()

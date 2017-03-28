@@ -38,6 +38,14 @@ class Record_Fb(BaseModel):
     fb_id = CharField(primary_key=True)
     last_accessed = DateTimeField(default=datetime.utcnow())
 
+class Record_Fsquare(BaseModel):
+    fsquare_id = CharField(primary_key=True)
+    last_accessed = DateTimeField(default=datetime.utcnow())    
+
+class Record_Google(BaseModel):
+    google_id = CharField(primary_key=True)
+    last_accessed = DateTimeField(default=datetime.utcnow())    
+
 while True:
     try:
         psql_db.connect()
@@ -51,11 +59,15 @@ if not Record_LinkedIn.table_exists():
 if not Record_Fb.table_exists():
     Record_Fb.create_table()
 
+if not Record_Fsquare.table_exists():
+    Record_Fsquare.create_table()
+
+if not Record_Google.table_exists():
+    Record_Google.create_table()    
 
 """
 RabbitMQ support courtesy of Pika
 """
-
 
 while True:
     try:
@@ -72,7 +84,6 @@ ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
 egress_channel = mqtt_connection.channel()
 egress_channel.queue_declare(queue='fetch', durable=True, arguments=pqdata)
-
 
 """
 Selectors
@@ -101,6 +112,25 @@ def seen_website(website):
     except Exception:
         return False
 
+def retrieve_Fsquare(foursquare_id):
+    return Record_Fsquare.select().where(Record_Fsquare.fsquare_id == foursquare_id).get()
+
+def seen_fsquare(foursquare_id):
+    try:
+        retrieve_Fsquare(foursquare_id)
+        return True
+    except Exception:
+        return False
+
+def retrieve_Google(google_id):
+    return Record_Google.select().where(Record_Google.google_id == google_id).get()
+
+def seen_google(google_id):
+    try:
+        retrieve_Google(google_id) 
+        return True
+    except Exception:
+        return False       
 """
 Message Handling
 """
@@ -115,6 +145,16 @@ def seen_linkedin_time_ago(lead):
         return True
     return False
 
+def seen_fsquare_time_ago(lead):
+    if (datetime.utcnow() - retrieve_Fsquare(lead).last_accessed).seconds > RECORD_TIMEOUT:
+        return True
+    return False        
+
+def seen_google_time_ago(lead):
+    if (datetime.utcnow() - retrieve_Google(lead).last_accessed).seconds > RECORD_TIMEOUT:
+        return True
+    return False        
+
 def callback(ch, method, properties, body):
     try:
         raw_data = json.loads(body)
@@ -128,15 +168,29 @@ def callback(ch, method, properties, body):
                     if seen_fb(raw_data["resource_locator"]):
                         retrieve_Fb(raw_data["resource_locator"]).delete_instance()
                     return
+
                 if raw_data["protocol"] == "linkedin":
                     if seen_website(raw_data["resource_locator"]):
                         retrieve_LinkedIn(raw_data["resource_locator"]).delete_instance()
                     return
+
+                if raw_data["protocol"] == "fsquare":
+                    if seen_fsquare(raw_data["resource_locator"]):
+                        retrieve_Fsquare(raw_data["resource_locator"]).delete_instance()
+                    return
+
+                if raw_data["protocol"] == "google":
+                    if seen_google(raw_data["resource_locator"]):
+                        retrieve_Google(raw_data["resource_locator"]).delete_instance()
+                    return        
+                            
                 raise Exception("Unknown protocol requested during deletion")
             else:
-                raise Exception("Body malformed")
+                raise Exception("Body malformed") 
+
         potential_leads = raw_data["potential_leads"]
         protocol = raw_data["protocol"]
+
         for lead in potential_leads:
             if protocol == "fb":
                 if not seen_fb(lead):
@@ -148,7 +202,7 @@ def callback(ch, method, properties, body):
                 elif seen_fb_time_ago(lead):
                     Record_Fb.update(last_accessed = datetime.utcnow()).where(fb_id == lead).execute()
                     sys.stderr.write("Updating: \n" + lead + "\n")
-                    sys.stderr.flush()
+                    sys.stderr.flush()    
                 else:
                     return
             if protocol == "linkedin":
@@ -161,9 +215,29 @@ def callback(ch, method, properties, body):
                 elif seen_linkedin_time_ago(lead):
                     Record_LinkedIn.update(last_accessed = datetime.utcnow()).where(url == lead).execute()
                     sys.stderr.write("Updating: \n" + lead + "\n")
-                    sys.stderr.flush()
+                    sys.stderr.flush()    
                 else:
                     return
+            if protocol == "fsquare":
+                if not seen_fsquare(lead):
+                    newRecord = Record_Fsquare(fsquare_id=lead, last_accessed= datetime.utcnow())
+                    newRecord.save(force_insert=True)
+                elif seen_fsquare_time_ago(lead):
+                    Record_Fsquare.update(last_accessed = datetime.utcnow()).where(fsquare_id == lead).execute()
+                    sys.stderr.write("Updating: \n" + lead + "\n")
+                    sys.stderr.flush()
+                else:
+                    return  
+            if protocol == "google":
+                if not seen_google(lead):
+                    newRecord = Record_Google(google_id=lead, last_accessed= datetime.utcnow())
+                    newRecord.save(force_insert=True)
+                elif seen_google_time_ago(lead):
+                    Record_Google.update(last_accessed=datetime.utcnow()).where(google_id == lead).execute()
+                    sys.stderr.write("Updating: \n" + lead + "\n")
+                    sys.stderr.flush()
+                else:
+                    return                
             fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}
             egress_channel.basic_publish(
                 exchange='',

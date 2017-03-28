@@ -3,8 +3,12 @@ import pika
 import json
 import time
 import traceback
+"""
+fetch specific dependencies
+"""
 
 import requests
+from time import sleep
 from lxml import html
 import facebook
 
@@ -12,6 +16,9 @@ MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
+FOURSQUARE_CLIENT_ID = os.environ.get('FOURSQUARE_CLIENT_ID')
+FOURSQUARE_CLIENT_SECRET = os.environ.get('FOURSQUARE_CLIENT_SECRET')
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
 """
@@ -67,10 +74,83 @@ def facebook_fetch(facebook_id):
                 if facebook_call_now.has_key("intl_number_with_plus"):
                     facebook_company_info["intl_number_with_plus"] = facebook_call_now["intl_number_with_plus"]
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
-    return facebook_company_info
+    return facebook_company_info    
+
+foursquare_version = '20170101'
+
+def foursquare_fetch(foursquare_id):
+    """
+    https://developer.foursquare.com/docs/
+    """
+    foursquare_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
+    foursquare_response = requests.get(foursquare_url)  
+    foursquare_response_json = foursquare_response.json() 
+    return foursquare_response_json["response"]["venue"]
+
+def foursquare_fetch_nextvenues(foursquare_id):
+    """
+    https://developer.foursquare.com/docs/
+    """
+    nextvenues_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "/nextvenues?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
+    web_response = requests.get(nextvenues_url)
+    resp = web_response.json()
+    next_venue_ids = [venue["id"] for venue in resp["response"]["nextVenues"]["items"]]
+    return next_venue_ids if next_venue_ids else []    
+
+def google_fetch(google_id):
+    """
+    https://developers.google.com/places/web-service/
+    """
+    google_details_url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=" + google_id + "&key=" + GOOGLE_API_KEY
+    google_response = requests.get(google_details_url)
+    google_response_json = google_response.json()
+    return google_response_json["result"]
+
+def google_fetch_nextvenues(google_response):
+    """
+    https://developers.google.com/places/web-service/
+
+    Parameters:
+    google_response: json output from google_fetch()
+
+    Outputs:
+    google_nextvenues_ids: array of google place_ids for next venues to explore
+    """
+
+    """
+    First we find the latitude and longitude of the current venue
+    """
+    venue_latitude = google_response["geometry"]["location"]["lat"] if (google_response.has_key('geometry') and google_response['geometry'].has_key('location') and google_response['geometry']['location'].has_key('lat')) else None
+    venue_longitude = google_response["geometry"]["location"]["lng"] if (google_response.has_key('geometry') and google_response['geometry'].has_key('location') and google_response['geometry']['location'].has_key('lng')) else None
+
+    google_nextvenues_ids = [] 
+
+    if (venue_latitude != None) and (venue_longitude != None):
+        """
+        We calculate new latitude and longitude to find new place_ids of locations aorund that coordinate
+
+        Here we divide by 222.0 because 1 degree = 111.0km approximately and we want to move
+        our search coordinate by 500m approximately
+
+        Positive latitude is above the equator
+        Positive longitude is east of the meridian
+
+        We set our search radius as 500m
+        """
+        new_latitude = float(venue_latitude) + (1.0 / 222.0)
+        new_longitude = float(venue_longitude) + (1.0 / 222.0)
+        radius = 500
+        next_venues_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + str(new_latitude) + "," + str(new_longitude) + "&radius=" + str(radius) + "&rankby=prominence&key=" + GOOGLE_API_KEY
+        response = requests.get(next_venues_url)
+        response_json = response.json()
+        venues_results = response_json["results"]
+        for venue_result in venues_results:
+            google_nextvenues_ids.append(venue_result["place_id"])
+
+    return google_nextvenues_ids     
 
 """
-Message Handling
+Message handling
 """
 
 def deleteNode(data):
@@ -132,6 +212,32 @@ def callback(ch, method, properties, body):
                 traceback.print_exc()
                 deleteNode(data)
                 raise e
+        elif data["protocol"] == "fsquare":
+            try:
+                fsquare_response = foursquare_fetch(data["resource_locator"])
+                if fsquare_response == None:
+                    raise Exception("Unable to find foursquare id: " + str(data["resource_locator"]))
+                fsquare_next_venues = foursquare_fetch_nextvenues(data["resource_locator"])
+                if fsquare_next_venues == None:
+                    raise Exception("Unable to find next venues of foursquare id: " + str(data["resource_locator"]))
+                new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": fsquare_response, "depth": data["depth"], "potential_leads": fsquare_next_venues} 
+            except Exception as e:
+                traceback.print_exc()
+                deleteNode(data)
+                raise e    
+        elif data["protocol"] == "google":
+            try:
+                google_response = google_fetch(data["resource_locator"])
+                if google_response == None:
+                    raise Exception("Unable to find google id: " + str(data["resource_locator"]))  
+                google_next_venues = google_fetch_nextvenues(google_response)
+                if google_next_venues == None:
+                    raise Exception("Unable to find next venues of google id: " + str(data["resource_locator"]))
+                new_body = {"protocol": data["protocol"], "resource_locator": data["resource_locator"], "raw_response": google_response, "depth": data["depth"], "potential_leads": google_next_venues}  
+            except Exception as e:
+                traceback.print_exc()
+                deleteNode(data)
+                raise e               
         else:
             deleteNode(data)
             raise Exception("Unable to categorize fetch instance: \n" + str(data["protocol"]) + ": " + str(data["resource_locator"]))
@@ -157,3 +263,4 @@ def callback(ch, method, properties, body):
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='fetch')
 ingress_channel.start_consuming()
+
