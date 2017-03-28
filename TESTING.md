@@ -86,7 +86,8 @@ docker-machine create --driver virtualbox \
   local-dev
 
 eval $(docker-machine env local-dev)
-docker-machine ssh local-dev sudo mkdir -p /mnt/sda1/ext
+docker-machine ssh local-dev tce-load -wi htop
+
 
 ```
 
