@@ -37,6 +37,7 @@ https://maps.googleapis.com/maps/api/place/details/json?placeid=place_id&key=GOO
 
 Fix Google implementation
 Doesn't seem to work after sending a second payload
+always stop at 21 rows
 
 
 

@@ -61,6 +61,14 @@ To be updated with automated test cases.
 # Queue [filter]
 {"potential_leads": ["https://www.linkedin.com/company/cisco"], "protocol": "linkedin", "depth": 1}
 
+# Foursquare
+# Queue [filter]
+{"potential_leads": ["4b7a6059f964a520002b2fe3"], "protocol": "fsquare", "depth": 1}
+
+# Google
+# Queue [filter]
+{"potential_leads": ["ChIJyY4rtGcX2jERIKTarqz3AAQ"], "protocol": "google", "depth": 1}
+
 ```
 
 ### Backend API
