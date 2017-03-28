@@ -161,9 +161,24 @@ WARN
 
 from flask import Flask, url_for
 from playhouse.shortcuts import model_to_dict, dict_to_model
+from flask_cors import CORS, cross_origin
+
 app = Flask(__name__)
+cors = CORS(app, resources={r"/api/*": {"origins": ['http://crawlz.me', 'http://localhost', 'http://localhost:8080']}})
 
 from extract_search import find_facebook_links, find_linkedin_links
+
+@app.route('/api/fastSearch/<searchTerm>')
+def fastSearch(searchTerm):
+    facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))
+    returnValues = {
+        "facebookContacts": _convertToList(facebookContacts),
+        "linkedinContacts": [],
+        "googleMapsContacts" : [],
+        "foursquareContacts" : []
+    }
+    return json.dumps(returnValues)
+
 
 @app.route('/api/search/<searchTerm>')
 def search(searchTerm):
@@ -188,14 +203,16 @@ def search(searchTerm):
     """using sleep here to wait for parser to store data"""
     time.sleep(0.05)
 
-    facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))
+    """facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))"""
     """linkedinContacts = LinkedInContact.select().where(LinkedInContact.org_name.contains(searchTerm))"""
-    returnValues = {
-        "facebookContacts": _convertToList(facebookContacts)
-    }
+    """returnValues = {
+        "facebookContacts": _convertToList(facebookContacts),
+        "linkedinContacts": [],
+        "googleMapsContacts" : [],
+        "foursquareContacts" : []
+    }"""
     """ ,"linkedinContacts": _convertToList(linkedinContacts) """
-    return json.dumps(returnValues)
-
+    return fastSearch(searchTerm)
 
 @app.route('/api/setDepth/<int:newDepth>')
 def _setDepth(newDepth):

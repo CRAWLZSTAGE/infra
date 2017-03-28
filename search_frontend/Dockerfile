@@ -56,10 +56,7 @@ ENV DB_USER=NOT_THIS_USER
 ENV DB_NAME=TEST_DB
 ENV FACEBOOK_ACCESS_TOKEN=NOT_THIS_TOKEN
 
-COPY requirements.txt /
-RUN pip install -r requirements.txt
-
-COPY *.py /
+COPY search-app /
 
 EXPOSE 80
 CMD ["python", "search_backend.py"]

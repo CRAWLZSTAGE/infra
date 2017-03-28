@@ -61,11 +61,30 @@ services:
     links:
       - mqtt
       - db
+      - nginx-proxy
     depends_on:
       - mqtt
       - db
+    environment:
+      - VIRTUAL_HOST=backend.crawlz.me
+  search_frontend:
+    build: ./search_frontend
+    env_file: _deployment/fetch.env
+    links:
+      - nginx-proxy
+    depends_on:
+      - search_backend
+    environment:
+      - VIRTUAL_HOST=crawlz.me
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
     ports:
       - 80:80
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+
 
 
 
