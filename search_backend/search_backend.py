@@ -164,7 +164,7 @@ from playhouse.shortcuts import model_to_dict, dict_to_model
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/api/*": {"origins": ['http://crawlz.me', 'http://localhost', 'http://localhost:8080']}})
+cors = CORS(app, resources={r"/api/*": {"origins": ['http://crawlz.me', 'http://localhost', 'http://localhost:8080', 'http://127.0.0.1', 'http://127.0.0.1:8080']}})
 
 from extract_search import find_facebook_links, find_linkedin_links
 
