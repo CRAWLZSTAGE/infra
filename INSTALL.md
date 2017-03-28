@@ -39,7 +39,8 @@ sudo mkdir -v /etc/resolver
 sudo bash -c 'echo "nameserver 127.0.0.1" > /etc/resolver/crawlz.me'
 
 # Reload dnsmasq service
-sudo launchctl unload homebrew.mxcl.dnsmasq.plist && sudo launchctl load homebrew.mxcl.dnsmasq.plist
+sudo launchctl unload /Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist && \
+  sudo launchctl load /Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist
 ```
 
 Update your DNS preferences in System_Preferences/Network/Advanced...
