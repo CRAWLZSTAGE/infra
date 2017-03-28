@@ -267,7 +267,7 @@ def callback(ch, method, properties, body):
         data = json.loads(body)
         if not data.has_key("org_name") or not data.has_key("protocol"):
             return
-        if not data.has_key("facebook_resource_locator") and not data.has_key("linkedin_resource_locator") and not data.has_key("foursquare_resource_locator"):
+        if not data.has_key("facebook_resource_locator") and not data.has_key("linkedin_resource_locator") and not data.has_key("foursquare_resource_locator") and not data.has_key("google_resource_locator"):
             raise Exception("Unable to identify resource")
         if data["protocol"] == "fb":
             newContact = FacebookContact.select().where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"])

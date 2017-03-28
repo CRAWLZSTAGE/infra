@@ -94,7 +94,7 @@ def foursquare_fetch_nextvenues(foursquare_id):
 def google_fetch(google_id):
     google_details_url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=" + google_id + "&key=" + GOOGLE_API_KEY
     google_response = requests.get(google_details_url)
-    google_response_json = venue_response.json()
+    google_response_json = google_response.json()
     return google_response_json["result"]
 
 def google_fetch_nextvenues(google_response):
@@ -103,15 +103,20 @@ def google_fetch_nextvenues(google_response):
 
     google_nextvenues_ids = [] 
 
-    if (venue_latitude and venue_longitude):
+    if (venue_latitude != None) and (venue_longitude != None):
+        sys.stderr.write("here")
+        sys.stderr.flush()
         new_latitude = venue_latitude + (1.0 / 222.0)
         new_longitude = venue_longitude + (1.0 / 222.0)
         radius = 500
         next_venues_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + str(new_latitude) + "," + str(new_longitude) + "&radius=" + str(radius) + "&rankby=prominence&key=" + GOOGLE_API_KEY
-        response = requests.get(google_url)
+        response = requests.get(next_venues_url)
         response_json = response.json()
         venues_results = response_json["results"]
-        google_nextvenues_ids.extend([venue["place_id"] for venue in venues_results])
+        for venue_result in venues_results:
+            sys.stderr.write("adding: \n" + venue_result["place_id"] + "\n")
+            sys.stderr.flush()
+            google_nextvenues_ids.append(venue_result["place_id"])
 
     return google_nextvenues_ids     
 
