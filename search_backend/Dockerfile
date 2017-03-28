@@ -59,8 +59,7 @@ ENV FACEBOOK_ACCESS_TOKEN=NOT_THIS_TOKEN
 COPY requirements.txt /
 RUN pip install -r requirements.txt
 
-COPY search_backend.py /
-COPY extract_search.py /
+COPY *.py /
 
 EXPOSE 80
 CMD ["python", "search_backend.py"]
