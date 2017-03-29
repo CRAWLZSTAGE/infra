@@ -99,7 +99,7 @@ docker-machine create --driver virtualbox \
 
 eval $(docker-machine env local-dev)
 docker-machine ssh local-dev tce-load -wi htop
-docker-machine scp -r _deployment/ssl local-dev:~/ssl/
+docker-machine scp -r _deployment/ssl local-dev:~/ssl
 
 ```
 
