@@ -23,11 +23,11 @@ docker exec -i -t $TARGET_CONTAINER /bin/bash
 
 ## Env file
 
-Enviornmental variables are stored in _deployment.
+Enviornmental variables are stored in _deployment/fetch.env.
 
 ### Facebook
 
-You may find the relevant information [here](https://developers.facebook.com/tools/accesstoken/)
+You may find the relevant information at [Facebook Developers](https://developers.facebook.com/tools/accesstoken/)
 
 ```
 
@@ -35,6 +35,16 @@ You may find the relevant information [here](https://developers.facebook.com/too
 FACEBOOK_ACCESS_TOKEN=******
 
 ```
+
+### Bing
+
+You may find relevant information [here](https://www.microsoft.com/cognitive-services/en-us/bing-web-search-api)
+
+```
+BING_ACCESS_TOKEN=*****
+```
+
+
 
 ## Test Cases
 
