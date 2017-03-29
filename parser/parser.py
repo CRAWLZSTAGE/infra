@@ -191,7 +191,7 @@ def foursquare_parse(foursquare_venue_info):
         'org_name': company_name,
         'address': company_street,
         'country': company_country,
-        'postal_code': int(company_postal),
+        'postal_code': company_postal,
         'contact_no': company_phone,
         'longitude': company_longitude,
         'latitude': company_latitude,

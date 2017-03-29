@@ -70,7 +70,7 @@ class FourSquareContact(BaseModel):
     address = TextField(null = True)
     country = CharField(null = True)
     #state = CharField(null = True)
-    postal_code = IntegerField(null = True)
+    postal_code = CharField(null = True)
     contact_no = CharField(null = True)
     #industry = CharField(null = True)
     fan_count = IntegerField(null = True)
@@ -212,7 +212,7 @@ def updateFourSquareContact(data):
         FourSquareContact.update(country = data["country"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     # if data.has_key("state") and data["state"] != None:
     #     FourSquareContact.update(state = data["state"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
+    if data.has_key("postal_code") and data["postal_code"] != None:
         FourSquareContact.update(postal_code = data["postal_code"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     if data.has_key("contact_no") and data["contact_no"] != None:
         FourSquareContact.update(contact_no = data["contact_no"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
@@ -240,7 +240,7 @@ def updateGoogleContact(data):
         GoogleContact.update(address = data["address"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
     if data.has_key("country") and data["country"] != None:
         GoogleContact.update(country = data["country"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
+    if data.has_key("postal_code") and data["postal_code"] != None:
         GoogleContact.update(postal_code = data["postal_code"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
     if data.has_key("contact_no") and data["contact_no"] != None:
         GoogleContact.update(contact_no = data["contact_no"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()

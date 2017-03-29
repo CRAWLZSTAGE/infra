@@ -26,7 +26,7 @@ FoursquareContact.propTypes = {
     address : React.PropTypes.string,
     country : React.PropTypes.string,
     // state : React.PropTypes.string,
-    postal_code : React.PropTypes.number,
+    postal_code : React.PropTypes.string,
     contact_no : React.PropTypes.string,
     // industry : React.PropTypes.string,
     fan_count : React.PropTypes.number,
