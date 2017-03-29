@@ -28,12 +28,12 @@ export class Results extends React.Component {
                 </div>
                 <div className="row">
                     <div className="col-xs-10 col-xs-offset-1">
-                        <GoogleContact />
+                        <GoogleContact googleContacts={this.props.contacts.googleContacts}/>
                     </div>
                 </div>
                 <div className="row">
                     <div className="col-xs-10 col-xs-offset-1">
-                        <FoursquareContact />
+                        <FoursquareContact foursquareContacts={this.props.contacts.foursquareContacts}/>
                     </div>
                 </div>
             </div>

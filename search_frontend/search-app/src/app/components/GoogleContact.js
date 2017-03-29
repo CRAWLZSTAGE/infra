@@ -1,19 +1,25 @@
 import React from "react";
+import { GenericContact } from "./GenericContact";
 
 export class GoogleContact extends React.Component {
     constructor(props) {
-        super();
-    }
-
-    call_me() {
-        console.log("TBC")
-    }
+        super(props);
+    } 
 
     render() {
+        var allGoogleContacts = [];
+        if (this.props.googleContacts != null){
+            allGoogleContacts = this.props.googleContacts.map((googleContact) => {
+                return (
+                    <div key={googleContact.google_resource_locator}>
+                        <GenericContact contactInfo={googleContact}></GenericContact>
+                    </div>
+                );
+            });
+        }
         return (
-            <div>
-                <h3>Hello {this.props.org_name}!</h3>
-                <button onClick={this.call_me.bind(this)} className="btn btn-success">Call me!</button>
+            <div className="list-group">
+                {allGoogleContacts}
             </div>
         );
     }

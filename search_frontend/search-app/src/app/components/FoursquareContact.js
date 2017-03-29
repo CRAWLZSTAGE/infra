@@ -1,19 +1,25 @@
 import React from "react";
+import { GenericContact } from "./GenericContact";
 
 export class FoursquareContact extends React.Component {
     constructor(props) {
-        super();
-    }
-
-    call_me() {
-        console.log("TBC")
-    }
+        super(props);
+    } 
 
     render() {
+        var allFoursquareContacts = []
+        if (this.props.foursquareContacts != null){
+            allFoursquareContacts = this.props.foursquareContacts.map((foursquareContact) => {
+                return (
+                    <div key={foursquareContact.foursquare_resource_locator}>
+                        <GenericContact contactInfo={foursquareContact}></GenericContact>
+                    </div>
+                );
+            });
+        }
         return (
-            <div>
-                <h3>Hello {this.props.org_name}!</h3>
-                <button onClick={this.call_me.bind(this)} className="btn btn-success">Call me!</button>
+            <div className="list-group">
+                {allFoursquareContacts}
             </div>
         );
     }

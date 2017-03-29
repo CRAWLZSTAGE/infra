@@ -1,4 +1,5 @@
 import React from "react";
+import 'whatwg-fetch'; // safari does not have "fetch" function -> http://stackoverflow.com/questions/35830202/fetch-not-defined-in-safari-referenceerror-cant-find-variable-fetch
 
 export class Input extends React.Component {
     constructor(props) {
@@ -9,7 +10,12 @@ export class Input extends React.Component {
 
     queryBackend(event) {
         var component = this; //required in promise
-        fetch('http://backend.crawlz.me/api/fastSearch/' + event.target.value, {
+        if (event.target.value == ""){
+            this.setState({inputValue: event.target.value});
+            component.props.setSettingsHandler({});
+            return
+        }
+        fetch('https://backend.crawlz.me/api/fastSearch/' + event.target.value, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -26,7 +32,16 @@ export class Input extends React.Component {
     keyUp(event){
         if (event.key == 'Enter'){
             var component = this; //required in promise
-            fetch('http://backend.crawlz.me/api/search/' + event.target.value, {
+            if (event.target.value == ""){
+                this.setState({inputValue: event.target.value});
+                component.props.setSettingsHandler({});
+                return
+            }
+            var locationTrailer = ""
+            if (localStorage.lat && localStorage.lon){
+                locationTrailer = locationTrailer + "?lat=" + String(localStorage.lat) + "&lon=" + String(localStorage.lon)
+            }
+            fetch('https://backend.crawlz.me/api/search/' + event.target.value + locationTrailer, {
               method: 'GET',
               headers: {
                 'Accept': 'application/json',

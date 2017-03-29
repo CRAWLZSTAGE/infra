@@ -19,7 +19,7 @@ class App extends React.Component {
             contacts: {
                 facebookContacts : [],
                 linkedinContacts : [],
-                googleMapsContacts : [],
+                googleContacts : [],
                 foursquareContacts : []
             }
         };
