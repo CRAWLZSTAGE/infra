@@ -87,7 +87,7 @@ def foursquare_fetch(foursquare_id):
     """
     https://developer.foursquare.com/docs/
     """
-    foursquare_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
+    foursquare_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + FOURSQUARE_VERSION
     foursquare_response = requests.get(foursquare_url)  
     foursquare_response_json = foursquare_response.json() 
     return foursquare_response_json["response"]["venue"]
@@ -96,7 +96,7 @@ def foursquare_fetch_nextvenues(foursquare_id):
     """
     https://developer.foursquare.com/docs/
     """
-    nextvenues_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "/nextvenues?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + foursquare_version
+    nextvenues_url = "https://api.foursquare.com/v2/venues/" + foursquare_id + "/nextvenues?client_id=" + FOURSQUARE_CLIENT_ID + "&client_secret=" + FOURSQUARE_CLIENT_SECRET + "&v=" + FOURSQUARE_VERSION
     web_response = requests.get(nextvenues_url)
     resp = web_response.json()
     next_venue_ids = [venue["id"] for venue in resp["response"]["nextVenues"]["items"]]
