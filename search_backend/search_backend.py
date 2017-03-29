@@ -151,6 +151,28 @@ def send_linkedin_ids(channel, linkedin_ids, _routing_key):
     )
 
 
+import threading
+
+# called by each thread
+def injectNewSearchTerms(searchTerm):
+    """SEARCH"""
+    facebook_contacts, facebook_ids = find_facebook_links(searchTerm)
+    """linkedin_ids = find_linkedin_links(searchTerm)"""
+
+    mqtt_connection = openConnection()
+    pqdata = dict()
+    pqdata['x-max-priority'] = 5
+    egress_channel_parse = mqtt_connection.channel()
+    egress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
+    egress_channel_filter = mqtt_connection.channel()
+    egress_channel_filter.queue_declare(queue='filter', durable=True, arguments=pqdata)
+
+    send_facebook_contacts(egress_channel_parse, facebook_contacts, "parse")
+    send_facebook_ids(egress_channel_filter, facebook_ids, "filter")
+    """send_linkedin_ids(egress_channel_filter, linkedin_ids, "filter")"""
+
+    mqtt_connection.close()
+
 """
 Flask
 
@@ -182,36 +204,9 @@ def fastSearch(searchTerm):
 
 @app.route('/api/search/<searchTerm>')
 def search(searchTerm):
-    """SEARCH"""
-    facebook_contacts, facebook_ids = find_facebook_links(searchTerm)
-    """linkedin_ids = find_linkedin_links(searchTerm)"""
-
-    mqtt_connection = openConnection()
-    pqdata = dict()
-    pqdata['x-max-priority'] = 5
-    egress_channel_parse = mqtt_connection.channel()
-    egress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
-    egress_channel_filter = mqtt_connection.channel()
-    egress_channel_filter.queue_declare(queue='filter', durable=True, arguments=pqdata)
-
-    send_facebook_contacts(egress_channel_parse, facebook_contacts, "parse")
-    send_facebook_ids(egress_channel_filter, facebook_ids, "filter")
-    """send_linkedin_ids(egress_channel_filter, linkedin_ids, "filter")"""
-
-    mqtt_connection.close()
-
-    """using sleep here to wait for parser to store data"""
-    time.sleep(0.05)
-
-    """facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))"""
-    """linkedinContacts = LinkedInContact.select().where(LinkedInContact.org_name.contains(searchTerm))"""
-    """returnValues = {
-        "facebookContacts": _convertToList(facebookContacts),
-        "linkedinContacts": [],
-        "googleMapsContacts" : [],
-        "foursquareContacts" : []
-    }"""
-    """ ,"linkedinContacts": _convertToList(linkedinContacts) """
+    t = threading.Thread(target=injectNewSearchTerms, args=[searchTerm])
+    t.daemon = True
+    t.start()
     return fastSearch(searchTerm)
 
 @app.route('/api/setDepth/<int:newDepth>')
