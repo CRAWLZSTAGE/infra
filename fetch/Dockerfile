@@ -43,6 +43,17 @@ RUN until apt-get install \
   do echo "retrying install"; \
   done;
 
+## DEBUG TOOLS
+
+RUN until apt-get install \
+  -y --no-install-recommends \
+    htop \
+    iotop \
+    strace \
+    dnsutils; \
+  do echo "retrying install"; \
+  done;
+
 RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
 ## COMMON_INIT_END
@@ -56,6 +67,6 @@ ENV MAX_DEPTH=4
 COPY requirements.txt /
 
 RUN pip install -r requirements.txt
-COPY fetch.py /
+COPY *.py /
 
 CMD ["python", "fetch.py"]

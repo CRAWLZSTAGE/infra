@@ -33,6 +33,8 @@ services:
           memory: 256M
       placement:
         constraints: [node.role == worker, engine.labels.db == true]
+    cap_add:
+      - sys_ptrace
   parser:
     build: ./parser
     links:

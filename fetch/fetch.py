@@ -21,6 +21,12 @@ FOURSQUARE_CLIENT_SECRET = os.environ.get('FOURSQUARE_CLIENT_SECRET')
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
+
+"""
+import logging
+logging.basicConfig(level=logging.DEBUG)
+"""
+
 """
 Note:
 
@@ -30,7 +36,7 @@ Should write classes and subclasses to deal with fetching from different sources
 while True:
     try:
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)
-        mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, credentials=_credentials))
+        mqtt_connection = pika.BlockingConnection(pika.ConnectionParameters(host=MQTT_HOST, port=5672, credentials=_credentials))
         break
     except Exception:
         time.sleep(5)
@@ -165,7 +171,6 @@ def deleteNode(data):
         )
     )
 
-
 def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
@@ -183,6 +188,7 @@ def callback(ch, method, properties, body):
             raise Exception("Body malformed")
         if data["resource_locator"] == None:
             raise Exception("Resource target unspecified")
+
         """
         Handle fetch drops gracefully
         """
