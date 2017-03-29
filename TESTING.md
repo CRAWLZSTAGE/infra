@@ -36,15 +36,9 @@ FACEBOOK_ACCESS_TOKEN=******
 
 ```
 
-### Bing
+### SSL
 
-You may find relevant information [here](https://www.microsoft.com/cognitive-services/en-us/bing-web-search-api)
-
-```
-BING_ACCESS_TOKEN=*****
-```
-
-
+Please generate ssl certs in the format that nginx-proxy [requires](https://github.com/jwilder/nginx-proxy#ssl-support) and place them at .
 
 ## Test Cases
 
@@ -105,7 +99,7 @@ docker-machine create --driver virtualbox \
 
 eval $(docker-machine env local-dev)
 docker-machine ssh local-dev tce-load -wi htop
-
+docker-machine scp -r _deployment/ssl local-dev:~/ssl/
 
 ```
 
