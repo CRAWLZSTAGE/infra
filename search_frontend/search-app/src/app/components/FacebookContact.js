@@ -60,6 +60,7 @@ export class FacebookContact extends React.Component {
 }
 
 FacebookContact.propTypes = {
+    facebook_resource_locator : React.PropTypes.string,
     org_name : React.PropTypes.string,
     description : React.PropTypes.string,
     address : React.PropTypes.string,
