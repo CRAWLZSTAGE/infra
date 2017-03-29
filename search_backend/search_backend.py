@@ -21,45 +21,7 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
 DB_NAME = os.environ.get('DB_NAME')
 
-psql_db = PostgresqlDatabase(DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
-
-class BaseModel(Model):
-    class Meta:
-        database = psql_db
-
-
-class FacebookContact(BaseModel):
-    facebook_resource_locator = TextField(primary_key=True)
-    org_name = CharField(null = True)
-    description = TextField(null = True)
-    address = TextField(null = True)
-    country = CharField(null = True)
-    state = CharField(null = True)
-    postal_code = IntegerField(null = True)
-    contact_no = CharField(null = True)
-    industry = CharField(null = True)
-    fan_count = IntegerField(null = True)
-    hours = TextField(null = True)
-    link = TextField(null = True)
-    longitude = TextField(null = True)
-    latitude = TextField(null = True)
-    intl_number_with_plus = TextField(null = True)
-
-class LinkedInContact(BaseModel):
-    linkedin_resource_locator = TextField(primary_key = True)
-    org_name = CharField(null = True)
-    org_type = CharField(null = True)
-    description = TextField(null = True)
-    address = TextField(null = True)
-    city = CharField(null = True)
-    state = CharField(null = True)
-    postal_code = IntegerField(null = True)
-    website = TextField(null = True)
-    industry = CharField(null = True)
-    specialities = TextField(null = True)
-    follower_count = IntegerField(null = True)
-    year_founded = TextField(null = True)
-    size = TextField(null = True)
+from databaseModel import psql_db, BaseModel, FacebookContact, LinkedInContact, FourSquareContact, GoogleContact
 
 while True:
     try:
@@ -184,12 +146,14 @@ from extract_search import find_facebook_links, find_linkedin_links
 def fastSearch(searchTerm):
     if not isinstance(searchTerm, str) and not isinstance(searchTerm, unicode):
         raise Exception("Term is not a string<" + str(type(searchTerm)) + ">: " + str(searchTerm))
-    facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))
+    facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)
+    googleMapsContacts = GoogleContact.select().where(GoogleContact.org_name.contains(searchTerm)).limit(50)
+    foursquareContacts = FourSquareContact.select().where(FourSquareContact.org_name.contains(searchTerm)).order_by(FourSquareContact.fan_count.desc()).limit(50)
     returnValues = {
         "facebookContacts": _convertToList(facebookContacts),
         "linkedinContacts": [],
-        "googleMapsContacts" : [],
-        "foursquareContacts" : []
+        "googleContacts" : _convertToList(googleMapsContacts),
+        "foursquareContacts" : _convertToList(foursquareContacts)
     }
     return json.dumps(returnValues)
 

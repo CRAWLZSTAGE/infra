@@ -69,6 +69,6 @@ ENV DB_NAME=TEST_DB
 COPY requirements.txt /
 
 RUN pip install -r requirements.txt
-COPY store.py /
+COPY *.py /
 
 CMD ["python", "store.py"]
