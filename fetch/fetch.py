@@ -18,6 +18,7 @@ MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 FACEBOOK_ACCESS_TOKEN = os.environ.get('FACEBOOK_ACCESS_TOKEN')
 FOURSQUARE_CLIENT_ID = os.environ.get('FOURSQUARE_CLIENT_ID')
 FOURSQUARE_CLIENT_SECRET = os.environ.get('FOURSQUARE_CLIENT_SECRET')
+FOURSQUARE_VERSION = os.environ.get('FOURSQUARE_VERSION')
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
@@ -81,8 +82,6 @@ def facebook_fetch(facebook_id):
                     facebook_company_info["intl_number_with_plus"] = facebook_call_now["intl_number_with_plus"]
     facebook_company_info["connections"] = graph.get_connections(id=facebook_id, connection_name='likes')['data']
     return facebook_company_info    
-
-foursquare_version = '20170101'
 
 def foursquare_fetch(foursquare_id):
     """

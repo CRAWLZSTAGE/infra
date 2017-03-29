@@ -24,7 +24,7 @@ GoogleContact.propTypes = {
     org_name : React.PropTypes.string,
     address : React.PropTypes.string,
     country : React.PropTypes.string,
-    postal_code : React.PropTypes.number,
+    postal_code : React.PropTypes.string,
     contact_no : React.PropTypes.string,
     industry : React.PropTypes.string,
     rating : React.PropTypes.number,

@@ -281,7 +281,7 @@ def google_get_address(google_address_info):
 
         company_street = ', '.join([tag.get_text() for tag in street_array]) if street_array else None
         company_country = country_array[0].get_text() if country_array else None
-        company_postal = int(postal_code_array[0].get_text()) if postal_code_array else None
+        company_postal = postal_code_array[0].get_text() if postal_code_array else None
 
     return company_street, company_country, company_postal    
 

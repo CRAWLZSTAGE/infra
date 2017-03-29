@@ -84,7 +84,7 @@ class GoogleContact(BaseModel):
     org_name = CharField(null = True)
     address = CharField(null = True)
     country = CharField(null = True)
-    postal_code = IntegerField(null = True)
+    postal_code = CharField(null = True)
     contact_no = CharField(null = True)
     industry = CharField(null = True)
     rating = FloatField(null = True)
