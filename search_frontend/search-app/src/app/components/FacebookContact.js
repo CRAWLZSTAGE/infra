@@ -21,8 +21,11 @@ export class FacebookContact extends React.Component {
                 let contact_no = null;
                 let description = null;
                 let address = null;
-                if (facebookContact.contact_no){
-                    contact_no = <p>Contact Number: {facebookContact.contact_no}</p>
+                let button = null;
+                if (facebookContact.contact_no || facebookContact.intl_number_with_plus){
+                    var contact = (facebookContact.contact_no ? facebookContact.contact_no : facebookContact.intl_number_with_plus)
+                    contact_no = <p>Contact Number: {contact}</p>
+                    button = <a href={"tel:" + contact.replace(/[()-]*\s/g, "")}><button onClick={this.call_me.bind(this)} className="btn btn-success">Call me!</button></a> 
                 };
                 if (facebookContact.description){
                     description = <p> {facebookContact.description} </p>
@@ -38,12 +41,12 @@ export class FacebookContact extends React.Component {
                     
                 };
                 return (
-                    <div>
+                    <div className="col-xs-8" key={facebookContact.facebook_resource_locator}>
                         <h3>{facebookContact.org_name}</h3>
                         {contact_no}
                         {description}
                         {address}
-                        <button onClick={this.call_me.bind(this)} className="btn btn-success">Call me!</button>
+                        {button}
                     </div>
                 );
             });
