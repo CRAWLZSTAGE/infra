@@ -37,7 +37,7 @@ class FacebookContact(BaseModel):
     address = TextField(null = True)
     country = CharField(null = True)
     state = CharField(null = True)
-    postal_code = IntegerField(null = True)
+    postal_code = CharField(null = True)
     contact_no = CharField(null = True)
     industry = CharField(null = True)
     fan_count = IntegerField(null = True)
@@ -152,7 +152,7 @@ def updateFacebookContact(data):
         FacebookContact.update(country = data["country"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("state") and data["state"] != None:
         FacebookContact.update(state = data["state"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
+    if data.has_key("postal_code") and data["postal_code"] != None:
         FacebookContact.update(postal_code = data["postal_code"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
     if data.has_key("contact_no") and data["contact_no"] != None:
         FacebookContact.update(contact_no = data["contact_no"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
