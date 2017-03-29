@@ -204,7 +204,8 @@ def callback(ch, method, properties, body):
                     sys.stderr.write("Updating: \n" + lead + "\n")
                     sys.stderr.flush()    
                 else:
-                    return
+                    #return
+                    continue
             if protocol == "linkedin":
                 if not seen_website(lead):
                     newRecord = Record_LinkedIn(url=lead, last_accessed = datetime.utcnow())
@@ -227,7 +228,8 @@ def callback(ch, method, properties, body):
                     sys.stderr.write("Updating: \n" + lead + "\n")
                     sys.stderr.flush()
                 else:
-                    return  
+                    continue
+                    #return  
             if protocol == "google":
                 if not seen_google(lead):
                     newRecord = Record_Google(google_id=lead, last_accessed= datetime.utcnow())
@@ -237,7 +239,9 @@ def callback(ch, method, properties, body):
                     sys.stderr.write("Updating: \n" + lead + "\n")
                     sys.stderr.flush()
                 else:
-                    return                
+                    # we go on to the next lead if we see a familiar lead
+                    # and if that familiar lead is not due for an update
+                    continue               
             fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}
             egress_channel.basic_publish(
                 exchange='',

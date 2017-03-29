@@ -33,10 +33,5 @@ To get more details of a venue, we use 'Place Details' service. Using the place_
 https://maps.googleapis.com/maps/api/place/details/json?placeid=place_id&key=GOOGLE_API_KEY
 
 
-## Things to do
-
-Fix Google implementation
-Doesn't seem to work after sending a second payload
-
 
 
