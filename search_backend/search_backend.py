@@ -9,7 +9,7 @@ import time
 import traceback
 
 from peewee import *
-from extract_search import find_facebook_links, find_linkedin_links
+from extract_search import find_facebook_links, find_linkedin_links, find_google_links, find_fsquare_links
 
 
 MQTT_HOST = os.environ.get('MQTT_HOST')
@@ -115,27 +115,9 @@ def send_facebook_contacts(channel, facebook_contacts, _routing_key):
         )
     return
 
-def send_facebook_ids(channel, facebook_ids, _routing_key):
+def send_ids(channel, linkedin_ids, _routing_key, protocol):
     newbody = {
-        "protocol": "fb", 
-        "potential_leads": facebook_ids, 
-        "depth": 1,
-        "priority": 1
-    }
-    channel.basic_publish(
-        exchange='',
-        routing_key=_routing_key,
-        body=json.dumps(newbody),
-        properties=pika.BasicProperties(
-            delivery_mode = 1,
-            priority = 1 # default priority
-        )
-    )
-    return
-
-def send_linkedin_ids(channel, linkedin_ids, _routing_key):
-    newbody = {
-        "protocol": "linkedin", 
+        "protocol": protocol, 
         "potential_leads": linkedin_ids, 
         "depth": 1,
         "priority": 1
@@ -154,10 +136,14 @@ def send_linkedin_ids(channel, linkedin_ids, _routing_key):
 import threading
 
 # called by each thread
-def injectNewSearchTerms(searchTerm):
+def injectNewSearchTerms(searchTerm, lat, lon):
     """SEARCH"""
-    facebook_contacts, facebook_ids = find_facebook_links(searchTerm)
+    fb_contacts, fb_ids = find_facebook_links(searchTerm)
     """linkedin_ids = find_linkedin_links(searchTerm)"""
+    google_ids = find_google_links(searchTerm)
+    fsquare_ids = None
+    if lat and lon:
+        fsquare_ids = find_fsquare_links(searchTerm, lat, lon)
 
     mqtt_connection = openConnection()
     pqdata = dict()
@@ -167,9 +153,13 @@ def injectNewSearchTerms(searchTerm):
     egress_channel_filter = mqtt_connection.channel()
     egress_channel_filter.queue_declare(queue='filter', durable=True, arguments=pqdata)
 
-    send_facebook_contacts(egress_channel_parse, facebook_contacts, "parse")
-    send_facebook_ids(egress_channel_filter, facebook_ids, "filter")
-    """send_linkedin_ids(egress_channel_filter, linkedin_ids, "filter")"""
+    send_facebook_contacts(egress_channel_parse, fb_contacts, "parse")
+    send_ids(egress_channel_filter, fb_ids, "filter", "fb")
+    send_ids(egress_channel_filter, google_ids, "filter", "google")
+    if fsquare_ids != None:
+        send_ids(egress_channel_filter, fsquare_ids, "filter", "fsquare")
+    
+    """send_ids(egress_channel_filter, linkedin_ids, "filter", "linkedin")"""
 
     mqtt_connection.close()
 
@@ -181,17 +171,19 @@ WARN
 - reparsing data is not time efficient -> find a way to join 2 sets of data together?
 """
 
-from flask import Flask, url_for
+from flask import Flask, request, url_for
 from playhouse.shortcuts import model_to_dict, dict_to_model
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-cors = CORS(app, resources={r"/api/*": {"origins": ['http://crawlz.me', 'http://localhost', 'http://localhost:8080', 'http://127.0.0.1', 'http://127.0.0.1:8080']}})
+cors = CORS(app, resources={r"/api/*": {"origins": ['https://crawlz.me', 'https://localhost', 'https://localhost:8080', 'https://127.0.0.1', 'https://127.0.0.1:8080']}})
 
 from extract_search import find_facebook_links, find_linkedin_links
 
 @app.route('/api/fastSearch/<searchTerm>')
 def fastSearch(searchTerm):
+    if not isinstance(searchTerm, str) and not isinstance(searchTerm, unicode):
+        raise Exception("Term is not a string<" + str(type(searchTerm)) + ">: " + str(searchTerm))
     facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm))
     returnValues = {
         "facebookContacts": _convertToList(facebookContacts),
@@ -201,10 +193,11 @@ def fastSearch(searchTerm):
     }
     return json.dumps(returnValues)
 
-
 @app.route('/api/search/<searchTerm>')
 def search(searchTerm):
-    t = threading.Thread(target=injectNewSearchTerms, args=[searchTerm])
+    if not isinstance(searchTerm, str) and not isinstance(searchTerm, unicode):
+        raise Exception("Term is not a string<" + str(type(searchTerm)) + ">: " + str(searchTerm))
+    t = threading.Thread(target=injectNewSearchTerms, args=[searchTerm, request.args.get('lat'), request.args.get('lon')])
     t.daemon = True
     t.start()
     return fastSearch(searchTerm)
