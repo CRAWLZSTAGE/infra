@@ -78,7 +78,7 @@ services:
     depends_on:
       - search_backend
     environment:
-      - VIRTUAL_HOST=crawlz.me
+      - VIRTUAL_HOST=crawlz.me,frontend.crawlz.me
       - HTTPS_METHOD=redirect
   nginx-proxy:
     image: jwilder/nginx-proxy
