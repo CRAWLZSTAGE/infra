@@ -10,11 +10,10 @@ We use boot2docker image for consistency. We shall set the docker environment va
 eval $(docker-machine env local-dev)
 
 # Rebuild
-docker compose build
-docker-compose up
+docker-compose up --build
 
 # Teardown
-docker-compose rm -f
+docker-compose rm -f {CONTAINER NAME}
 
 # Inspecting running container
 docker exec -i -t $TARGET_CONTAINER /bin/bash
