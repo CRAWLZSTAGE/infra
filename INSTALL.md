@@ -21,14 +21,17 @@ Refer to [testing doc](TESTING.md#Local-Deployment)
 Courtesy https://medium.com/@narakuw/brew-install-dnsmasq-in-macos-sierra-26021c824be8
 
 ```sh
+
+brew install dnsmasq
+
 # Create config files
 mkdir -pv $(brew --prefix)/etc/
 cp /usr/local/opt/dnsmasq/dnsmasq.conf.example /usr/local/etc/dnsmasq.conf
-echo 'address=/crawlz.me/$(docker-machine ip local-dev)' > $(brew --prefix)/etc/dnsmasq.conf
-echo 'no-resolv' > $(brew --prefix)/etc/dnsmasq.conf
-echo 'strict-order' > $(brew --prefix)/etc/dnsmasq.conf
-echo 'server=8.8.8.8#5353' > $(brew --prefix)/etc/dnsmasq.conf
-echo 'listen-address=127.0.0.1,192.168.x.x' > $(brew --prefix)/etc/dnsmasq.conf
+echo 'address=/crawlz.me/'$(docker-machine ip local-dev) >> $(brew --prefix)/etc/dnsmasq.conf
+echo 'no-resolv' >> $(brew --prefix)/etc/dnsmasq.conf
+echo 'strict-order' >> $(brew --prefix)/etc/dnsmasq.conf
+echo 'server=8.8.8.8#5353' >> $(brew --prefix)/etc/dnsmasq.conf
+## echo 'listen-address=127.0.0.1,192.168.x.x' >> $(brew --prefix)/etc/dnsmasq.conf
 
 # Load daemons
 sudo launchctl load -w /Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist
