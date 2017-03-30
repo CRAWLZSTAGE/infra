@@ -13,7 +13,7 @@ export class GenericContact extends React.Component {
         if (this.props.contactInfo.contact_no || this.props.contactInfo.intl_number_with_plus){
             var contact = (this.props.contactInfo.contact_no ? this.props.contactInfo.contact_no : this.props.contactInfo.intl_number_with_plus)
             contact_no = <p>Contact Number: {contact}</p>
-            button = <a href={"tel:" + contact.replace(/[()-]*\s/g, "")}><button className="btn btn-success">Call me!</button></a> 
+            button = <a href={"tel:" + contact.replace(/[()-\s]*/g, "")}><button className="btn btn-success">Call me!</button></a> 
         };
         if (this.props.contactInfo.description){
             description = <p> {this.props.contactInfo.description} </p>
