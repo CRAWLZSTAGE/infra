@@ -89,7 +89,12 @@ pqdata = dict()
 pqdata['x-max-priority'] = 5
 
 ingress_channel = mqtt_connection.channel()
+ingress_channel.exchange_declare(exchange='admin', type='fanout')
+
 ingress_channel.queue_declare(queue='filter', durable=True, arguments=pqdata)
+admin_queue = ingress_channel.queue_declare(arguments=pqdata)
+ingress_channel.queue_bind(exchange="admin", queue=admin_queue.method.queue)
+
 egress_channel = mqtt_connection.channel()
 egress_channel.queue_declare(queue='fetch', durable=True, arguments=pqdata)
 
@@ -268,8 +273,20 @@ def callback(ch, method, properties, body):
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
 
+def admin_callback(ch, method, properties, body):
+    try:
+        data = json.loads(body)
+        return
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to fetch: \n" + body + "\n")
+        traceback.print_exc()
+        sys.stderr.flush()
+    finally:
+        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='filter')
+ingress_channel.basic_consume(admin_callback, queue=admin_queue.method.queue)
 ingress_channel.start_consuming()
 
 

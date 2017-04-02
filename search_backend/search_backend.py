@@ -52,11 +52,11 @@ def openConnection():
         raise e
     return mqtt_connection
 
-def setDepth(newDepth, channel, _routing_key):
+def setDepth(newDepth, channel):
     newbody = {"maxDepth": newDepth}
     channel.basic_publish(
-        exchange='',
-        routing_key=_routing_key,
+        exchange='admin',
+        routing_key='',
         body=json.dumps(newbody),
         properties=pika.BasicProperties(
             delivery_mode = 1,
@@ -208,13 +208,9 @@ def _setDepth(newDepth):
     pqdata = dict()
     pqdata['x-max-priority'] = 5
 
-    egress_channel_fetch = mqtt_connection.channel()
-    egress_channel_fetch.queue_declare(queue='fetch', durable=True, arguments=pqdata)
-    egress_channel_parse = mqtt_connection.channel()
-    egress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
+    egress_channel = mqtt_connection.channel()
 
-    setDepth(newDepth, egress_channel_fetch, "fetch")
-    setDepth(newDepth, egress_channel_parse, "parse")
+    setDepth(newDepth, egress_channel)
     mqtt_connection.close()
     return 'Depth set: ' + str(newDepth)
 

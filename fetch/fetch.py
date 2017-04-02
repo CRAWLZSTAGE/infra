@@ -53,7 +53,12 @@ pqdata = dict()
 pqdata['x-max-priority'] = 5
 
 ingress_channel = mqtt_connection.channel()
+ingress_channel.exchange_declare(exchange='admin', type='fanout')
+
 ingress_channel.queue_declare(queue='fetch', durable=True, arguments=pqdata)
+admin_queue = ingress_channel.queue_declare(arguments=pqdata)
+ingress_channel.queue_bind(exchange="admin", queue=admin_queue.method.queue)
+
 egress_channel_parse = mqtt_connection.channel()
 egress_channel_parse.queue_declare(queue='parse', durable=True, arguments=pqdata)
 egress_channel_filter = mqtt_connection.channel()
@@ -181,13 +186,6 @@ def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
         """
-        Handle max depth
-        """
-        global MAX_DEPTH
-        if data.has_key("maxDepth") and isinstance(data["maxDepth"], int):
-            MAX_DEPTH = int(data["maxDepth"])
-            return
-        """
         Data bounds check
         """
         if not data.has_key("protocol") or not data.has_key("resource_locator") or not data.has_key("depth"):
@@ -272,7 +270,25 @@ def callback(ch, method, properties, body):
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
 
+def admin_callback(ch, method, properties, body):
+    try:
+        data = json.loads(body)
+        """
+        Handle max depth
+        """
+        global MAX_DEPTH
+        if data.has_key("maxDepth") and isinstance(data["maxDepth"], int):
+            MAX_DEPTH = int(data["maxDepth"])
+            return
+    except Exception as e:
+        sys.stderr.write(str(e) + "Unable to fetch: \n" + body + "\n")
+        traceback.print_exc()
+        sys.stderr.flush()
+    finally:
+        ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
+
 ingress_channel.basic_qos(prefetch_count=1)
 ingress_channel.basic_consume(callback, queue='fetch')
+ingress_channel.basic_consume(admin_callback, queue=admin_queue.method.queue)
 ingress_channel.start_consuming()
 
