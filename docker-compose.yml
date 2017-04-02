@@ -9,13 +9,6 @@ volumes:
     grafana_data: {}
     postgresql_data: {}
 
-networks:
-  front-tier:
-    driver: bridge
-  back-tier:
-    driver: bridge
-
-
 services:
   db:
     build: ./db
