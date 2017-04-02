@@ -6,6 +6,7 @@ import traceback
 
 from peewee import *
 
+
 # DEBUG = int(os.environ.get('DEBUG'))
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
@@ -17,13 +18,16 @@ PSQL ORM courtesy of PeeWee
 No need for schema.sql since PeeWee can take care of this for us!
 """
 
-from databaseModel import psql_db, BaseModel, FacebookContact, LinkedInContact, FourSquareContact, GoogleContact
+from databaseModel import psql_db, BaseModel, FacebookContact, LinkedInContact, FourSquareContact, GoogleContact, updateFacebookContact, updateLinkedInContact, updateFourSquareContact, updateGoogleContact
 
 while True:
     try:
         psql_db.connect()
         break
-    except Exception:
+    except Exception as e:
+        sys.stderr.write("Unable to connect to PSQL: \n" + str(e) + "\n")
+        traceback.print_exc()
+        sys.stderr.flush()
         time.sleep(5)
 
 if not FacebookContact.table_exists():
@@ -37,6 +41,21 @@ if not FourSquareContact.table_exists():
 
 if not GoogleContact.table_exists():
     GoogleContact.create_table()
+
+"""
+if not FTSFacebookContact.table_exists():
+    FTSFacebookContact.create_table()
+
+if not FTSLinkedInContact.table_exists():
+    FTSLinkedInContact.create_table()
+
+if not FTSFourSquareContact.table_exists():
+    FTSFourSquareContact.create_table()
+
+if not FTSGoogleContact.table_exists():
+    FTSGoogleContact.create_table()
+"""
+
 """
 RabbitMQ support courtesy of Pika
 
@@ -57,131 +76,7 @@ pqdata['x-max-priority'] = 5
 
 ingress_channel = mqtt_connection.channel()
 ingress_channel.queue_declare(queue='store', durable=True, arguments=pqdata)
-
-
-"""
-Updating function
-
-- Currently it just overwrites, also makes multiple requests per update, not cool
-- follower count is different for different sites
-"""
-
-def updateFacebookContact(data):
-    if data.has_key("org_name") and data["org_name"] != None:
-        FacebookContact.update(org_name = data["org_name"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("description") and data["description"] != None:
-        FacebookContact.update(description = data["description"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("address") and data["address"] != None:
-        FacebookContact.update(address = data["address"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("country") and data["country"] != None:
-        FacebookContact.update(country = data["country"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("state") and data["state"] != None:
-        FacebookContact.update(state = data["state"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("postal_code") and data["postal_code"] != None:
-        FacebookContact.update(postal_code = data["postal_code"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("contact_no") and data["contact_no"] != None:
-        FacebookContact.update(contact_no = data["contact_no"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("industry") and data["industry"] != None:
-        FacebookContact.update(industry = data["industry"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("fan_count") and isinstance(data["fan_count"], int) and data["fan_count"] != None:
-        FacebookContact.update(fan_count = data["fan_count"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("hours") and data["hours"] != None:
-        FacebookContact.update(hours = data["hours"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("link") and data["link"] != None:
-        FacebookContact.update(link = data["link"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("longitude") and data["longitude"] != None:
-        FacebookContact.update(longitude = data["longitude"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("latitude") and data["latitude"] != None:
-        FacebookContact.update(latitude = data["latitude"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
-        FacebookContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
-    return
-
-def updateLinkedInContact(data):
-    if data.has_key("org_name") and data["org_name"] != None:
-        LinkedInContact.update(org_name = data["org_name"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("org_type") and data["org_type"] != None:
-        LinkedInContact.update(org_type = data["org_type"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("description") and data["description"] != None:
-        LinkedInContact.update(description = data["description"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("address") and data["address"] != None:
-        LinkedInContact.update(address = data["address"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("city") and data["city"] != None:
-        LinkedInContact.update(city = data["city"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("state") and data["state"] != None:
-        LinkedInContact.update(state = data["state"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("postal_code") and isinstance(data["postal_code"], int) and data["postal_code"] != None:
-        LinkedInContact.update(postal_code = data["postal_code"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("website") and data["website"] != None:
-        LinkedInContact.update(website = data["website"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("industry") and data["industry"] != None:
-        LinkedInContact.update(industry = data["industry"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("specialities") and data["specialities"] != None:
-        LinkedInContact.update(specialities = data["specialities"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("follower_count") and isinstance(data["follower_count"], int) and data["follower_count"] != None:
-        LinkedInContact.update(follower_count = data["follower_count"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("year_founded") and data["year_founded"] != None:
-        LinkedInContact.update(year_founded = data["year_founded"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    if data.has_key("size") and data["size"] != None:
-        LinkedInContact.update(size = data["size"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
-    return
-
-def updateFourSquareContact(data):
-    if data.has_key("org_name") and data["org_name"] != None:
-        FourSquareContact.update(org_name = data["org_name"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("description") and data["description"] != None:
-        FourSquareContact.update(description = data["description"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("address") and data["address"] != None:
-        FourSquareContact.update(address = data["address"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("country") and data["country"] != None:
-        FourSquareContact.update(country = data["country"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    # if data.has_key("state") and data["state"] != None:
-    #     FourSquareContact.update(state = data["state"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("postal_code") and data["postal_code"] != None:
-        FourSquareContact.update(postal_code = data["postal_code"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("contact_no") and data["contact_no"] != None:
-        FourSquareContact.update(contact_no = data["contact_no"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    # if data.has_key("industry") and data["industry"] != None:
-    #     FourSquareContact.update(industry = data["industry"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("fan_count") and isinstance(data["fan_count"], int) and data["fan_count"] != None:
-        FourSquareContact.update(fan_count = data["fan_count"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("hours") and data["hours"] != None:
-        FourSquareContact.update(hours = data["hours"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("link") and data["link"] != None:
-        FourSquareContact.update(link = data["link"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("longitude") and data["longitude"] != None:
-        FourSquareContact.update(longitude = data["longitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    if data.has_key("latitude") and data["latitude"] != None:
-        FourSquareContact.update(latitude = data["latitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    # if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
-    #     FourSquareContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
-    return
-
-
-def updateGoogleContact(data):
-    if data.has_key("org_name") and data["org_name"] != None:
-        GoogleContact.update(org_name = data["org_name"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("address") and data["address"] != None:
-        GoogleContact.update(address = data["address"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("country") and data["country"] != None:
-        GoogleContact.update(country = data["country"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("postal_code") and data["postal_code"] != None:
-        GoogleContact.update(postal_code = data["postal_code"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("contact_no") and data["contact_no"] != None:
-        GoogleContact.update(contact_no = data["contact_no"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("industry") and data["industry"] != None:
-        GoogleContact.update(industry = data["industry"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("rating") and isinstance(data["rating"], float) and data["rating"] != None:
-        GoogleContact.update(rating = data["rating"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("link") and data["link"] != None:
-        GoogleContact.update(link = data["link"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("longitude") and data["longitude"] != None:
-        GoogleContact.update(longitude = data["longitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("latitude") and data["latitude"] != None:
-        GoogleContact.update(latitude = data["latitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
-        GoogleContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
-    return    
+ 
 """
 Message Handling
 This is real ugly, should introduce classes

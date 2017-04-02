@@ -9,6 +9,7 @@ import time
 import traceback
 
 from peewee import *
+from playhouse.postgres_ext import Match
 from extract_search import find_facebook_links, find_linkedin_links, find_google_links, find_fsquare_links
 
 
@@ -21,13 +22,16 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
 DB_NAME = os.environ.get('DB_NAME')
 
-from databaseModel import psql_db, BaseModel, FacebookContact, LinkedInContact, FourSquareContact, GoogleContact
+from databaseModel import psql_db, BaseModel, FacebookContact, LinkedInContact, FourSquareContact, GoogleContact, _Match
 
 while True:
     try:
         psql_db.connect()
         break
-    except Exception:
+    except Exception as e:
+        sys.stderr.write("Unable to connect to PSQL: \n" + str(e) + "\n")
+        traceback.print_exc()
+        sys.stderr.flush()
         time.sleep(5)
 
 def openConnection():
@@ -146,11 +150,18 @@ from extract_search import find_facebook_links, find_linkedin_links
 def fastSearch(searchTerm):
     if not isinstance(searchTerm, str) and not isinstance(searchTerm, unicode):
         raise Exception("Term is not a string<" + str(type(searchTerm)) + ">: " + str(searchTerm))
-    facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)
+    """facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)"""
+    newSearchTerm = " & ".join(searchTerm.split())
+    try:
+        facebookContacts = FacebookContact.select().where(_Match(FacebookContact.search_content, newSearchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)
+        facebookContacts = _convertToList(facebookContacts)
+    except:
+        psql_db.rollback()
+        facebookContacts = list()
     googleMapsContacts = GoogleContact.select().where(GoogleContact.org_name.contains(searchTerm)).limit(50)
     foursquareContacts = FourSquareContact.select().where(FourSquareContact.org_name.contains(searchTerm)).order_by(FourSquareContact.fan_count.desc()).limit(50)
     returnValues = {
-        "facebookContacts": _convertToList(facebookContacts),
+        "facebookContacts": facebookContacts,
         "linkedinContacts": [],
         "googleContacts" : _convertToList(googleMapsContacts),
         "foursquareContacts" : _convertToList(foursquareContacts)

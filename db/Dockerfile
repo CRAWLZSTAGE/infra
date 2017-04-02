@@ -18,5 +18,7 @@ ENV PGDATA=/mnt/sda1/ext
 
 # COPY ./schema.sql /docker-entrypoint-initdb.d/
 
+ADD create_hstore_extension.sh docker-entrypoint-initdb.d/create_hstore_extension.sh
+
 EXPOSE 5432
 
