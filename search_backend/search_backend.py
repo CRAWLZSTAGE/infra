@@ -58,6 +58,8 @@ def setDepth(newDepth, channel, _routing_key):
 
 def _convertToList(contactsFromModel):
     _ = list()
+    if len(contactsFromModel) == 0:
+        return _
     for contact in contactsFromModel:
         _.append(model_to_dict(contact))
     return _
@@ -151,17 +153,25 @@ def fastSearch(searchTerm):
     if not isinstance(searchTerm, str) and not isinstance(searchTerm, unicode):
         raise Exception("Term is not a string<" + str(type(searchTerm)) + ">: " + str(searchTerm))
     """facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)"""
-    newSearchTerm = " & ".join(searchTerm.split())
+    newSearchTerms = " & ".join(searchTerm.split())
     try:
-        facebookContacts = FacebookContact.select().where(_Match(FacebookContact.search_content, newSearchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)
-        facebookContacts = _convertToList(facebookContacts)
+        facebookContacts = FacebookContact.select().where(_Match(FacebookContact.search_content, newSearchTerms)).order_by(FacebookContact.fan_count.desc()).limit(50)
     except:
         psql_db.rollback()
         facebookContacts = list()
-    googleMapsContacts = GoogleContact.select().where(GoogleContact.org_name.contains(searchTerm)).limit(50)
-    foursquareContacts = FourSquareContact.select().where(FourSquareContact.org_name.contains(searchTerm)).order_by(FourSquareContact.fan_count.desc()).limit(50)
+    try:
+        googleMapsContacts = GoogleContact.select().where(_Match(GoogleContact.search_content, newSearchTerms)).limit(50)
+    except:
+        psql_db.rollback()
+        googleMapsContacts = list()
+    try:
+        foursquareContacts = FourSquareContact.select().where(_Match(FourSquareContact.search_content, newSearchTerms)).order_by(FourSquareContact.fan_count.desc()).limit(50)
+    except:
+        psql_db.rollback()
+        foursquareContacts = list()
+
     returnValues = {
-        "facebookContacts": facebookContacts,
+        "facebookContacts": _convertToList(facebookContacts),
         "linkedinContacts": [],
         "googleContacts" : _convertToList(googleMapsContacts),
         "foursquareContacts" : _convertToList(foursquareContacts)

@@ -192,7 +192,7 @@ def updateFacebookContact(data):
     else:
         ftsContact = FTSFacebookContact(facebook_resource_locator=data["facebook_resource_locator"])
     """
-    search_attributes = ["org_name", "description", "address", "country", "postal_code"]
+    search_attributes = ["org_name", "address", "state", "country", "postal_code"]
     search_attributes_filtered = filter(lambda key: data.has_key(key) and data[key] != None, search_attributes)
     data_to_add = " ".join(map(lambda key: data[key], search_attributes_filtered))
     FacebookContact.update(search_content = fn.to_tsvector(remove_accents(data_to_add))).where(FacebookContact.facebook_resource_locator == data["facebook_resource_locator"]).execute()
@@ -225,6 +225,10 @@ def updateLinkedInContact(data):
         LinkedInContact.update(year_founded = data["year_founded"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     if data.has_key("size") and data["size"] != None:
         LinkedInContact.update(size = data["size"]).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
+    search_attributes = ["org_name", "address", "city", "state", "postal_code"]
+    search_attributes_filtered = filter(lambda key: data.has_key(key) and data[key] != None, search_attributes)
+    data_to_add = " ".join(map(lambda key: data[key], search_attributes_filtered))
+    LinkedInContact.update(search_content = fn.to_tsvector(remove_accents(data_to_add))).where(LinkedInContact.linkedin_resource_locator == data["linkedin_resource_locator"]).execute()
     return
 
 def updateFourSquareContact(data):
@@ -256,6 +260,10 @@ def updateFourSquareContact(data):
         FourSquareContact.update(latitude = data["latitude"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     # if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
     #     FourSquareContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
+    search_attributes = ["org_name", "address", "country", "postal_code"]
+    search_attributes_filtered = filter(lambda key: data.has_key(key) and data[key] != None, search_attributes)
+    data_to_add = " ".join(map(lambda key: data[key], search_attributes_filtered))
+    FourSquareContact.update(search_content = fn.to_tsvector(remove_accents(data_to_add))).where(FourSquareContact.foursquare_resource_locator == data["foursquare_resource_locator"]).execute()
     return
 
 
@@ -282,4 +290,8 @@ def updateGoogleContact(data):
         GoogleContact.update(latitude = data["latitude"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
     if data.has_key("intl_number_with_plus") and data["intl_number_with_plus"] != None:
         GoogleContact.update(intl_number_with_plus = data["intl_number_with_plus"]).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
+    search_attributes = ["org_name", "address", "country", "postal_code"]
+    search_attributes_filtered = filter(lambda key: data.has_key(key) and data[key] != None, search_attributes)
+    data_to_add = " ".join(map(lambda key: data[key], search_attributes_filtered))
+    GoogleContact.update(search_content = fn.to_tsvector(remove_accents(data_to_add))).where(GoogleContact.google_resource_locator == data["google_resource_locator"]).execute()
     return    
