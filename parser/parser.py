@@ -14,6 +14,14 @@ MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
+import sys
+import signal
+
+def handler(signum, frame):
+    sys.exit(1)
+
+signal.signal(signal.SIGTERM, handler)
+
 while True:
     try:
         _credentials = pika.PlainCredentials(MQTT_USER, MQTT_PASSWORD)

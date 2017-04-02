@@ -22,6 +22,13 @@ FOURSQUARE_VERSION = os.environ.get('FOURSQUARE_VERSION')
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 MAX_DEPTH = int(os.environ.get('MAX_DEPTH'))
 
+import sys
+import signal
+
+def handler(signum, frame):
+    sys.exit(1)
+
+signal.signal(signal.SIGTERM, handler)
 
 """
 import logging

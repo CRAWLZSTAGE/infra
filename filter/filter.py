@@ -17,6 +17,14 @@ DB_NAME = os.environ.get('DB_NAME')
 RECORD_TIMEOUT = os.environ.get('RECORD_TIMEOUT')
 """In Seconds"""
 
+import sys
+import signal
+
+def handler(signum, frame):
+    sys.exit(1)
+
+signal.signal(signal.SIGTERM, handler)
+
 
 """
 PSQL ORM courtesy of PeeWee

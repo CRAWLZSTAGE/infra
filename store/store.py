@@ -6,11 +6,18 @@ import traceback
 
 from peewee import *
 
-
 # DEBUG = int(os.environ.get('DEBUG'))
 MQTT_HOST = os.environ.get('MQTT_HOST')
 MQTT_USER = os.environ.get('MQTT_USER')
 MQTT_PASSWORD = os.environ.get('MQTT_PASSWORD')
+
+import sys
+import signal
+
+def handler(signum, frame):
+    sys.exit(1)
+
+signal.signal(signal.SIGTERM, handler)
 
 """
 PSQL ORM courtesy of PeeWee
