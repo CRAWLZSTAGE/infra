@@ -9,8 +9,14 @@ services:
       - 5432:5432
   mqtt:
     build: ./mqtt
-    ports:
-      - 15672:15672
+    links:
+      - nginx-proxy
+    depends_on:
+      - nginx-proxy
+    environment:
+      - VIRTUAL_HOST=rabbitmq.crawlz.me
+      - VIRTUAL_PORT=15672
+      - HTTPS_METHOD=redirect
     restart: always
   fetch:
     build: ./fetch
