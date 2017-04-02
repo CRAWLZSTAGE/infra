@@ -52,6 +52,9 @@ COPY search-app/dist /var/www/
 EXPOSE 80
 
 WORKDIR /var/www/
-CMD ["python", "-m", "SimpleHTTPServer", "80"]
+COPY *.py /var/www/
+
+EXPOSE 80
+CMD ["python", "search_frontend.py"]
 
 ## Test with docker run -i -t $(docker build . | tail -1 | awk '{ print $NF }')

@@ -22,6 +22,14 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_USER = os.environ.get('DB_USER')
 DB_NAME = os.environ.get('DB_NAME')
 
+import sys
+import signal
+
+def handler(signum, frame):
+    sys.exit(1)
+
+signal.signal(signal.SIGTERM, handler)
+
 from databaseModel import psql_db, BaseModel, FacebookContact, LinkedInContact, FourSquareContact, GoogleContact, _Match
 
 while True:
@@ -170,12 +178,16 @@ def fastSearch(searchTerm):
         psql_db.rollback()
         foursquareContacts = list()
 
-    returnValues = {
-        "facebookContacts": _convertToList(facebookContacts),
-        "linkedinContacts": [],
-        "googleContacts" : _convertToList(googleMapsContacts),
-        "foursquareContacts" : _convertToList(foursquareContacts)
-    }
+    returnValues = list()
+    try:
+        returnValues = {
+            "facebookContacts": _convertToList(facebookContacts),
+            "linkedinContacts": [],
+            "googleContacts" : _convertToList(googleMapsContacts),
+            "foursquareContacts" : _convertToList(foursquareContacts)
+        }
+    except:
+        psql_db.rollback()
     return json.dumps(returnValues)
 
 @app.route('/api/search/<searchTerm>')
