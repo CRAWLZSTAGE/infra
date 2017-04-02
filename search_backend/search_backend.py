@@ -10,6 +10,7 @@ import traceback
 
 from peewee import *
 from playhouse.postgres_ext import Match
+from playhouse.shortcuts import model_to_dict, dict_to_model
 from extract_search import find_facebook_links, find_linkedin_links, find_google_links, find_fsquare_links
 
 
@@ -148,7 +149,6 @@ WARN
 """
 
 from flask import Flask, request, url_for
-from playhouse.shortcuts import model_to_dict, dict_to_model
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
@@ -163,17 +163,17 @@ def fastSearch(searchTerm):
     """facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)"""
     newSearchTerms = " & ".join(searchTerm.split())
     try:
-        facebookContacts = FacebookContact.select().where(_Match(FacebookContact.search_content, newSearchTerms)).order_by(FacebookContact.fan_count.desc()).limit(50)
+        facebookContacts = FacebookContact.select().where((_Match(FacebookContact.search_content, newSearchTerms)) | (FacebookContact.org_name.contains(searchTerm))).order_by(FacebookContact.fan_count.desc()).limit(50)
     except:
         psql_db.rollback()
         facebookContacts = list()
     try:
-        googleMapsContacts = GoogleContact.select().where(_Match(GoogleContact.search_content, newSearchTerms)).limit(50)
+        googleMapsContacts = GoogleContact.select().where((_Match(GoogleContact.search_content, newSearchTerms)) | (GoogleContact.org_name.contains(searchTerm))).limit(50)
     except:
         psql_db.rollback()
         googleMapsContacts = list()
     try:
-        foursquareContacts = FourSquareContact.select().where(_Match(FourSquareContact.search_content, newSearchTerms)).order_by(FourSquareContact.fan_count.desc()).limit(50)
+        foursquareContacts = FourSquareContact.select().where((_Match(FourSquareContact.search_content, newSearchTerms)) | (FourSquareContact.org_name.contains(searchTerm))).order_by(FourSquareContact.fan_count.desc()).limit(50)
     except:
         psql_db.rollback()
         foursquareContacts = list()
