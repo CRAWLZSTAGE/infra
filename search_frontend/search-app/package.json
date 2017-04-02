@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build",
     "build": "webpack -d && cp src/index.html dist/index.html && webpack-dev-server --content-base src/ --inline --hot --https",
-    "build:prod": "webpack -p && cp src/index.html dist/index.html"
+    "build:prod": "webpack -p && cp src/index.html dist/index.html  && cp src/app/geolocation.js dist/app/geolocation.js"
   },
   "author": "CRAWLZ Team",
   "license": "MIT",

@@ -47,18 +47,11 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python
 
 ## COMMON_INIT_END
 
-ENV MQTT_HOST=mqtt
-ENV MQTT_USER=NOT_THIS_USER
-ENV MQTT_PASSWORD=NOT_THIS_PASSWORD
-ENV DB_HOST=db
-ENV DB_PASSWORD=NOT_THIS_PASSWORD
-ENV DB_USER=NOT_THIS_USER
-ENV DB_NAME=TEST_DB
-ENV FACEBOOK_ACCESS_TOKEN=NOT_THIS_TOKEN
-
-COPY search-app /
+COPY search-app/dist /var/www/
 
 EXPOSE 80
-CMD ["python", "search_backend.py"]
+
+WORKDIR /var/www/
+CMD ["python", "-m", "SimpleHTTPServer", "80"]
 
 ## Test with docker run -i -t $(docker build . | tail -1 | awk '{ print $NF }')
