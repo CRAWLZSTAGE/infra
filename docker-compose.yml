@@ -29,6 +29,7 @@ services:
       - VIRTUAL_HOST=rabbitmq.crawlz.me
       - VIRTUAL_PORT=15672
       - HTTPS_METHOD=redirect
+      - CERT_NAME=crawlz.me
     restart: always
 
   fetch:
@@ -109,6 +110,7 @@ services:
     environment:
       - VIRTUAL_HOST=crawlz.me,frontend.crawlz.me
       - HTTPS_METHOD=redirect
+      - CERT_NAME=crawlz.me
     restart: always
 
   nginx-proxy:
@@ -141,6 +143,7 @@ services:
       - VIRTUAL_HOST=prometheus.crawlz.me
       - VIRTUAL_PORT=9090
       - HTTPS_METHOD=redirect
+      - CERT_NAME=crawlz.me
   
   node-exporter:
     container_name: node-exporter
@@ -159,6 +162,7 @@ services:
       - VIRTUAL_HOST=node-exporter.crawlz.me
       - VIRTUAL_PORT=9100
       - HTTPS_METHOD=redirect
+      - CERT_NAME=crawlz.me
       
   cadvisor:
     image: google/cadvisor
@@ -182,6 +186,7 @@ services:
       - VIRTUAL_HOST=grafana.crawlz.me
       - VIRTUAL_PORT=3000
       - HTTPS_METHOD=redirect
+      - CERT_NAME=crawlz.me
 
 
 
