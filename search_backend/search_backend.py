@@ -218,7 +218,7 @@ while True:
     try:
         app.run(host='0.0.0.0', port=80)
     except Exception as e:
-        sys.stderr.write(str(e) + "Unable to parse body: \n" + body + "\n")
+        sys.stderr.write(str(e) + "Unable to parse body: \n" + "\n")
         traceback.print_exc()
         sys.stderr.flush()
 
