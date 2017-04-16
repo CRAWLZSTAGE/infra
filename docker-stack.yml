@@ -11,18 +11,18 @@ volumes:
 
 services:
   db:
-    build: ./db
+    image: crawlz/db
     volumes:
       - postgresql_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
-    env_file:
-      - _deployment/common.env
     environment:
       - PGDATA=/var/lib/postgresql/data
+    env_file:
+      - _deployment/common.env
 
   mqtt:
-    build: ./mqtt
+    image: rabbitmq:3-management
     links:
       - nginx-proxy
     depends_on:
@@ -37,7 +37,7 @@ services:
     restart: always
 
   fetch:
-    build: ./fetch
+    image: crawlz/fetch
     links:
       - mqtt
     depends_on:
@@ -48,23 +48,11 @@ services:
     restart: always
     deploy:
       replicas: 10
-      update_config:
-        parallelism: 2
-        delay: 10s
-      restart_policy:
-        condition: on-failure
-        delay: 2s
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-      placement:
-        constraints: [node.role == worker, engine.labels.db == true]
     cap_add:
       - sys_ptrace
 
   parser:
-    build: ./parser
+    image: crawlz/parser
     links:
       - mqtt
     depends_on:
@@ -74,7 +62,7 @@ services:
     restart: always
 
   store:
-    build: ./store
+    image: crawlz/store
     links:
       - mqtt
       - db
@@ -86,7 +74,7 @@ services:
     restart: always
 
   filter:
-    build: ./filter
+    image: crawlz/filter
     links:
       - mqtt
       - db
@@ -98,7 +86,8 @@ services:
     restart: always
 
   search_backend:
-    build: ./search_backend
+    image: crawlz/search_backend
+    env_file: _deployment/fetch.env
     links:
       - mqtt
       - db
@@ -106,31 +95,31 @@ services:
     depends_on:
       - mqtt
       - db
-    environment:
-      - VIRTUAL_HOST=backend.crawlz.me
-      - HTTPS_METHOD=redirect
     env_file:
       - _deployment/common.env
       - _deployment/secrets.env
+    environment:
+      - VIRTUAL_HOST=backend.crawlz.me
+      - HTTPS_METHOD=redirect
     restart: always
 
   search_frontend:
-    build: ./search_frontend
+    image: crawlz/search_frontend
+    env_file: _deployment/fetch.env
     links:
       - nginx-proxy
     depends_on:
       - search_backend
+    env_file:
+      - _deployment/common.env
     environment:
       - VIRTUAL_HOST=crawlz.me,frontend.crawlz.me
       - HTTPS_METHOD=redirect
       - CERT_NAME=crawlz.me
-    env_file:
-      - _deployment/common.env
     restart: always
 
   nginx-proxy:
     image: jwilder/nginx-proxy
-    container_name: nginx-proxy
     ports:
       - 80:80
       - 443:443
@@ -140,8 +129,7 @@ services:
     restart: always
 
   prometheus:
-    build: ./prometheus
-    container_name: prometheus
+    image: crawlz/prometheus
     volumes:
       - prometheus_data:/prometheus
     command:
@@ -161,7 +149,6 @@ services:
       - CERT_NAME=crawlz.me
   
   node-exporter:
-    container_name: node-exporter
     image: prom/node-exporter
     volumes: 
       - /proc:/host/proc

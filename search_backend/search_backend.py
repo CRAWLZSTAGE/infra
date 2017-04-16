@@ -8,7 +8,7 @@ import json
 import time
 import traceback
 
-from peewee import *
+"""from peewee import *"""
 from playhouse.postgres_ext import Match
 from playhouse.shortcuts import model_to_dict, dict_to_model
 from extract_search import find_facebook_links, find_linkedin_links, find_google_links, find_fsquare_links
@@ -162,6 +162,8 @@ def fastSearch(searchTerm):
         raise Exception("Term is not a string<" + str(type(searchTerm)) + ">: " + str(searchTerm))
     """facebookContacts = FacebookContact.select().where(FacebookContact.org_name.contains(searchTerm)).order_by(FacebookContact.fan_count.desc()).limit(50)"""
     newSearchTerms = " & ".join(searchTerm.split())
+    psql_db.close()
+    psql_db.connect()
     try:
         facebookContacts = FacebookContact.select().where((_Match(FacebookContact.search_content, newSearchTerms)) | (FacebookContact.org_name.contains(searchTerm))).order_by(FacebookContact.fan_count.desc()).limit(50)
     except:
