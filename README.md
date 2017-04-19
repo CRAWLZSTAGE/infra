@@ -1,4 +1,4 @@
-# CRAWLZ
+# CRAWLZ.me
 
 [![MIT License](https://img.shields.io/npm/l/stack-overflow-copy-paste.svg?style=flat-square)](http://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/CRAWLZSTAGE/infra.svg?branch=master)](https://travis-ci.org/CRAWLZSTAGE/infra)
@@ -7,7 +7,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/927edd47e2df4a9db9a941c40c0fc470)](https://www.codacy.com/app/jellyjellyrobot/infra?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=CRAWLZSTAGE/infra&amp;utm_campaign=Badge_Grade)
 
 
-TODO ADD GIF
+[![Screenshot](images/output.gif)](https://crawlz.me)
 
 ## Was Ist Das?
 
@@ -15,15 +15,14 @@ CRAWLZ seeks to develop a database of Businesses worldwide. It allows a company 
 
 ## Architecture
 
-This project is split into 5 containers, which can be scaled to fit processing tasks as defined by the user. We intend to atomize certain functions to introduce more scalablity and functionalities into the code base. For example: 
-- Captcha circumvention using machine learning or crowdsourcing
+This project is split into 5 containers, which can be scaled to fit processing tasks as defined by the user. We intend to atomize certain functions to introduce more scalablity and functionalities into the code base.
 
 ## Deployment
 
-Currently, the code is/will be (TODO) be tested on
-- a local environment with 4 cores
-- 1 * DigitalOcean instance quad core instance
-We intend to scale this up to span multiple computers in the future.
+```
+curl https://raw.githubusercontent.com/CRAWLZSTAGE/infra/master/docker-stack.yml > docker-stack.yml
+docker stack deploy --compose-file=docker-stack.yml crawlz_stack
+```
 
 ## Wiki
 
