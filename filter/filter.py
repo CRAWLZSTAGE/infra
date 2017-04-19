@@ -205,56 +205,65 @@ def callback(ch, method, properties, body):
         protocol = raw_data["protocol"]
 
         for lead in potential_leads:
-            if protocol == "fb":
-                if not seen_fb(lead):
-                    newRecord = Record_Fb(fb_id=lead, last_accessed = datetime.utcnow())
-                    newRecord.save(force_insert=True)
-                    """
-                    TODO: Handle elif difference
-                    """
-                elif seen_fb_time_ago(lead):
-                    Record_Fb.update(last_accessed = datetime.utcnow()).where(fb_id == lead).execute()
-                    sys.stderr.write("Updating: \n" + lead + "\n")
-                    sys.stderr.flush()    
-                else:
-                    #return
-                    continue
-            if protocol == "linkedin":
-                if not seen_website(lead):
-                    newRecord = Record_LinkedIn(url=lead, last_accessed = datetime.utcnow())
-                    newRecord.save(force_insert=True)
-                    """
-                    TODO: Handle elif difference
-                    """
-                elif seen_linkedin_time_ago(lead):
-                    Record_LinkedIn.update(last_accessed = datetime.utcnow()).where(url == lead).execute()
-                    sys.stderr.write("Updating: \n" + lead + "\n")
-                    sys.stderr.flush()    
-                else:
-                    return
-            if protocol == "fsquare":
-                if not seen_fsquare(lead):
-                    newRecord = Record_Fsquare(fsquare_id=lead, last_accessed= datetime.utcnow())
-                    newRecord.save(force_insert=True)
-                elif seen_fsquare_time_ago(lead):
-                    Record_Fsquare.update(last_accessed = datetime.utcnow()).where(fsquare_id == lead).execute()
-                    sys.stderr.write("Updating: \n" + lead + "\n")
-                    sys.stderr.flush()
-                else:
-                    continue
-                    #return  
-            if protocol == "google":
-                if not seen_google(lead):
-                    newRecord = Record_Google(google_id=lead, last_accessed= datetime.utcnow())
-                    newRecord.save(force_insert=True)
-                elif seen_google_time_ago(lead):
-                    Record_Google.update(last_accessed=datetime.utcnow()).where(google_id == lead).execute()
-                    sys.stderr.write("Updating: \n" + lead + "\n")
-                    sys.stderr.flush()
-                else:
-                    # we go on to the next lead if we see a familiar lead
-                    # and if that familiar lead is not due for an update
-                    continue               
+            try:
+                if protocol == "fb":
+                    if not seen_fb(lead):
+                        newRecord = Record_Fb(fb_id=lead, last_accessed = datetime.utcnow())
+                        newRecord.save(force_insert=True)
+                        """
+                        TODO: Handle elif difference
+                        """
+                    elif seen_fb_time_ago(lead):
+                        Record_Fb.update(last_accessed = datetime.utcnow()).where(fb_id == lead).execute()
+                        sys.stderr.write("Updating: \n" + lead + "\n")
+                        sys.stderr.flush()    
+                    else:
+                        #return
+                        continue
+                if protocol == "linkedin":
+                    if not seen_website(lead):
+                        newRecord = Record_LinkedIn(url=lead, last_accessed = datetime.utcnow())
+                        newRecord.save(force_insert=True)
+                        """
+                        TODO: Handle elif difference
+                        """
+                    elif seen_linkedin_time_ago(lead):
+                        Record_LinkedIn.update(last_accessed = datetime.utcnow()).where(url == lead).execute()
+                        sys.stderr.write("Updating: \n" + lead + "\n")
+                        sys.stderr.flush()    
+                    else:
+                        return
+                if protocol == "fsquare":
+                    if not seen_fsquare(lead):
+                        newRecord = Record_Fsquare(fsquare_id=lead, last_accessed= datetime.utcnow())
+                        newRecord.save(force_insert=True)
+                    elif seen_fsquare_time_ago(lead):
+                        Record_Fsquare.update(last_accessed = datetime.utcnow()).where(fsquare_id == lead).execute()
+                        sys.stderr.write("Updating: \n" + lead + "\n")
+                        sys.stderr.flush()
+                    else:
+                        continue
+                        #return  
+                if protocol == "google":
+                    if not seen_google(lead):
+                        newRecord = Record_Google(google_id=lead, last_accessed= datetime.utcnow())
+                        newRecord.save(force_insert=True)
+                    elif seen_google_time_ago(lead):
+                        Record_Google.update(last_accessed=datetime.utcnow()).where(google_id == lead).execute()
+                        sys.stderr.write("Updating: \n" + lead + "\n")
+                        sys.stderr.flush()
+                    else:
+                        # we go on to the next lead if we see a familiar lead
+                        # and if that familiar lead is not due for an update
+                        continue
+            except Exception as e:
+                try:
+                    sys.stderr.write("Attempting to rollback db: \n" + str(e) + "\n")
+                    psql_db.rollback()
+                except Exception as e:
+                    sys.stderr.write("DB connection is messed up: \n" + str(e) + "\n")
+                    psql_db.close()
+                    psql_db.connect()
             fetch_data = {"protocol": raw_data["protocol"], "resource_locator": lead, "depth": raw_data["depth"]}
             egress_channel.basic_publish(
                 exchange='',
@@ -268,6 +277,11 @@ def callback(ch, method, properties, body):
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to filter: \n" + body + "\n")
         traceback.print_exc()
+        try:
+            psql_db.rollback()
+        except:
+            psql_db.close()
+            psql_db.connect()
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)

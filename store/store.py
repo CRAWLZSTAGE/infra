@@ -171,6 +171,11 @@ def admin_callback(ch, method, properties, body):
     except Exception as e:
         sys.stderr.write(str(e) + "Unable to fetch: \n" + body + "\n")
         traceback.print_exc()
+        try:
+            psql_db.rollback()
+        except:
+            psql_db.close()
+            psql_db.connect()
         sys.stderr.flush()
     finally:
         ingress_channel.basic_ack(delivery_tag = method.delivery_tag)
