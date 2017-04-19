@@ -1,32 +1,47 @@
 import React from "react";
 import 'whatwg-fetch'; // safari does not have "fetch" function -> http://stackoverflow.com/questions/35830202/fetch-not-defined-in-safari-referenceerror-cant-find-variable-fetch
 
+const TIMEOUT = 1000
+
 export class Input extends React.Component {
     constructor(props) {
         super(props);
-
-        this.state = {inputValue: 'Input Query Here'};
+        this.state = {
+            inputValue: '',
+            inputTime: null
+        };
     }
 
     queryBackend(event) {
-        var component = this; //required in promise
-        if (event.target.value == ""){
-            this.setState({inputValue: event.target.value});
-            component.props.setSettingsHandler({});
+        this.setState({inputTime: Date.now()})
+        var currentInput = event.target.value + "";
+        this.setState({inputValue: currentInput});
+        if (currentInput == ""){
+            this.setState({inputValue: currentInput});
+            this.props.setSettingsHandler({});
             return
         }
-        fetch('https://backend.crawlz.me/api/fastSearch/' + event.target.value, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          }
-        }).then(function(response) {
-            response.json().then(function(json) {
-                component.props.setSettingsHandler(json);
+        setTimeout(function() {
+            if (this.state.inputTime == null || Date.now() - this.state.inputTime < TIMEOUT){
+                console.log("Waiting for keystrokes")
+                return
+            }
+            var component = this; //required in promise
+            component.props.setLastQueryHandler(currentInput);
+            fetch('https://backend.crawlz.me/api/fastSearch/' + currentInput, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              }
+            }).then(function(response) {
+                response.json().then(function(json) {
+                    component.props.setSettingsHandler(json, currentInput);
+                });
             });
-        });
-        this.setState({inputValue: event.target.value});
+            
+        }.bind(this), TIMEOUT);
+
     }
 
     keyUp(event){
@@ -61,7 +76,7 @@ export class Input extends React.Component {
                 <input className="form-control" value={this.state.inputValue} type="search" 
                     onChange={this.queryBackend.bind(this)}
                     onKeyDown={this.keyUp.bind(this)} 
-                    id="searchInput" rows="1">
+                    id="searchInput" rows="1" placeholder="Search for..">
                 </input>
             </div>
         );

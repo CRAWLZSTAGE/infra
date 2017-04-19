@@ -4,16 +4,6 @@ import { FacebookContact } from "./FacebookContact";
 import { GoogleContact } from "./GoogleContact";
 import { FoursquareContact } from "./FoursquareContact";
 
-const FacebookContactList = ({facebookContact}) => {
-  return (
-    <div>
-       <div>
-          <h1>MEHHH</h1>
-       </div>
-    </div>
-  );
-}
-
 export class Results extends React.Component {
     constructor(props) {
         super(props);

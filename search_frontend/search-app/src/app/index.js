@@ -21,14 +21,25 @@ class App extends React.Component {
                 linkedinContacts : [],
                 googleContacts : [],
                 foursquareContacts : []
-            }
+            },
+            lastQuery: ""
         };
     }
-    setSettings(contacts) {
+    setLastQuery(currentQuery) {
         this.setState({
-            contacts: contacts
+            lastQuery: currentQuery
         })
-        console.log(this.state.contacts)
+        console.log("CurrentQuery: " + this.state.lastQuery)
+    }
+    setSettings(contacts, currentQuery) {
+        if (this.state.lastQuery == currentQuery){
+            this.setState({
+                contacts: contacts
+            })
+            console.log(this.state.contacts)
+        }else{
+            console.log("CurrentQuery: " + currentQuery + " does not match lastQuery: " + this.state.lastQuery)
+        }
     }
     render() {
         return (
@@ -40,7 +51,7 @@ class App extends React.Component {
                 </div>
                 <div className="row">
                     <div className="col-xs-10 col-xs-offset-1">
-                        <Input setSettingsHandler={this.setSettings.bind(this)}/>
+                        <Input setSettingsHandler={this.setSettings.bind(this)} setLastQueryHandler={this.setLastQuery.bind(this)}/>
                     </div>
                 </div>
                 <div className="row">
