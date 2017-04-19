@@ -31,7 +31,7 @@ export class GenericContact extends React.Component {
             address = <p> {address} </p>
         };
         return (
-            <div className="col-xs-8" key={this.props.contactInfo.facebook_resource_locator}>
+            <div className="col-xs-10" key={this.props.contactInfo.facebook_resource_locator}>
                 <h3>{this.props.contactInfo.org_name}</h3>
                 {contact_no}
                 {address}

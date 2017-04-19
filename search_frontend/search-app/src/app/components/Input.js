@@ -72,7 +72,7 @@ export class Input extends React.Component {
 
     render() {
         return (
-            <div className="col-xs-10 col-xs-offset-1 form-group row">
+            <div className="col-xs-12 form-group row">
                 <input className="form-control" value={this.state.inputValue} type="search" 
                     onChange={this.queryBackend.bind(this)}
                     onKeyDown={this.keyUp.bind(this)} 

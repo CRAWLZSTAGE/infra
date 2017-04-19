@@ -45,17 +45,17 @@ class App extends React.Component {
         return (
             <div className="container">
                 <div className="row">
-                    <div className="col-xs-10 col-xs-offset-1">
+                    <div className="col-xs-12">
                         <Header />
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-xs-10 col-xs-offset-1">
+                    <div className="col-xs-12">
                         <Input setSettingsHandler={this.setSettings.bind(this)} setLastQueryHandler={this.setLastQuery.bind(this)}/>
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-xs-10 col-xs-offset-1">
+                    <div className="col-xs-12">
                         <Results contacts={this.state.contacts}/>
                     </div>
                 </div> 
